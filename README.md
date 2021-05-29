@@ -3,7 +3,7 @@
 
 # aiotnb
 
-## Coroutine based TNBC SDK.
+## A coroutine-based client for the TNB Network API
 
 
 ## Contributing

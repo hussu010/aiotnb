@@ -141,3 +141,5 @@ cython_debug/
 logs/
 aiotnb.sublime-project
 aiotnb.sublime-workspace
+PROPOSAL.md
+pyrightconfig.json
