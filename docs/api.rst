@@ -11,6 +11,12 @@ This is the entire API of aiotnb.
 Version Info
 -------------
 
+.. data:: version_info
+
+    Similar to :obj:`py:sys.version_info`, but a dataclass instead of a named tuple.
+
+    Fields are the same, and valid values for ``releaselevel`` are the same as well.
+
 .. data:: __version__
 
     The current version number as a semver-style string, eg. ``'0.1.0b'``.
