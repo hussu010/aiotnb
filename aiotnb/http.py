@@ -99,12 +99,12 @@ class HTTPClient:
 
         return text
 
-    async def _init_session(self):
+    async def init_session(self):
         if not self.__session:
             self.__session = ClientSession(connector=self.connector)
 
         else:
-            log.warn("_init_session called with existing session")
+            log.warn("init_session called with existing session")
 
     async def close(self):
         if self.__session:

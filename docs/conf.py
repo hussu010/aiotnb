@@ -56,6 +56,7 @@ extlinks = {
 intersphinx_mapping = {
     "py": ("https://docs.python.org/3", None),
     "aio": ("https://docs.aiohttp.org/en/stable/", None),
+    "pynacl": ("https://pynacl.readthedocs.io/en/latest", None),
 }
 
 rst_prolog = """
@@ -154,11 +155,7 @@ html_experimental_html5_writer = True
 # a list of builtin themes.
 html_theme = "basic"
 
-html_context = {
-    "tnb_models": [
-        ("aiotnb.models", "models/"),
-    ],
-}
+html_context = {}
 
 resource_links = {
     "issues": "https://github.com/AnonymousDapper/aiotnb/issues",

@@ -7,7 +7,7 @@ Copyright (c) 2021 AnonymousDapper
 import pytest
 
 from aiotnb.exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
-from aiotnb.http_client import HTTPClient, HTTPMethod, Route
+from aiotnb.http import HTTPClient, HTTPMethod, Route
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,7 +15,7 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture  # type: ignore
 async def client():
     c = HTTPClient()
-    await c._init_session()
+    await c.init_session()
 
     yield c
 

@@ -24,7 +24,82 @@ Version Info
 Core
 -----
 
-Connect to a Bank
+Connect to a bank
 ~~~~~~~~~~~~~~~~~~
 
+See the TNB `Bank API <https://thenewboston.com/bank-api/>`_ documentation.
+
 .. autofunction:: connect_to_bank
+
+Connect to a Primary Validator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See the TNB `Primary Validator API <https://thenewboston.com/primary-validator-api/>`_ documentation.
+
+.. autofunction:: connect_to_pv
+
+
+Connect to a Confirmation Validator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See the TNB `Confirmation Validator API <https://thenewboston.com/confirmation-validator-api/>`_ documentation.
+
+.. autofunction:: connect_to_cv
+
+
+Keypair Account Management
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: LocalAccount
+
+.. autoclass:: LocalAccount
+    :members:
+
+Exceptions
+-----------
+
+    The following is a list of possible exceptions thrown by aiotnb.
+
+    .. autoexception:: TNBException
+
+    .. autoexception:: HTTPException
+        :members:
+
+    .. autoexception:: Forbidden
+
+    .. autoexception:: NotFound
+
+    .. autoexception:: NetworkServerError
+
+    .. autoexception:: KeysignException
+        :members:
+
+    .. autoexception:: KeyfileNotFound
+
+    .. autoexception:: SigningKeyLoadFailed
+
+    .. autoexception:: VerifyKeyLoadFailed
+
+    .. autoexception:: SignatureVerifyFailed
+
+    .. autoexception:: ValidatorException
+
+
+Exception Reference
+~~~~~~~~~~~~~~~~~~~~
+
+.. exception_hierarchy::
+
+    - :exc:`Exception`
+        - :exc:`TNBException`
+            - :exc:`HTTPException`
+                - :exc:`Forbidden`
+                - :exc:`NotFound`
+                - :exc:`NetworkServerError`
+            - :exc:`ValidatorException`
+            - :exc:`KeysignException`
+                - :exc:`KeyfileNotFound`
+                - :exc:`SigningKeyLoadFailed`
+                - :exc:`VerifyKeyLoadFailed`
+                - :exc:`SignatureVerifyFailed`
+

@@ -20,7 +20,7 @@
   {%- endfor %}
   {%- endblock %}
   {%- block scripts %}
-  <script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/documentation_options.js', 1) }}"></script>
+  <!-- <script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/documentation_options.js', 1) }}"></script> -->
   {%- for js in script_files %}
   {{ js_tag(js) }}
   {%- endfor %}
@@ -79,17 +79,18 @@
     </header>
     {#- The sub-header with search and extension related selection #}
     <div class="sub-header grid-item">
-      <label for="documentation_select">{{ _('View Documentation For') }}</label>
+      <!-- <label for="documentation_select">{{ _('View Documentation For') }}</label>
       <select id="documentation_select" onchange="window.location = this.value;">
         {%- if pagename is prefixedwith 'ext/' %}
         <option value="{{ pathto(master_doc)|e }}">aiotnb</option>
         {%- else %}
         <option value="{{ pathto(pagename) }}" selected>aiotnb</option>
         {%- endif %}
-        {%- for ext, p in discord_extensions %}
+        {%- for ext, p in tnb_models %}
         <option value="{{ pathto(p + '/index')|e }}" {% if pagename is prefixedwith p %}selected{% endif %}>{{ ext }}</option>
         {%- endfor %}
-      </select>
+      </select> -->
+      <a accesskey="S" class="settings" onclick="settingsModal.open();"><span class="material-icons">settings</span></a>
       <form role="search" class="search" action="{{ pathto('search') }}" method="get">
         <div class="search-wrapper">
           <input type="search" name="q" placeholder="{{ _('Search documentation') }}" />
@@ -98,7 +99,6 @@
           </button>
         </div>
       </form>
-      <a accesskey="S" class="settings" onclick="settingsModal.open();"><span class="material-icons">settings</span></a>
     </div>
     {#- The sidebar component #}
     <aside class="grid-item">

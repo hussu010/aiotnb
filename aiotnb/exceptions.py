@@ -6,10 +6,22 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("TNBException", "HTTPException", "Forbidden", "NotFound", "NetworkServerError")
+__all__ = (
+    "TNBException",
+    "HTTPException",
+    "Forbidden",
+    "NotFound",
+    "NetworkServerError",
+    "ValidatorException",
+    "KeysignException",
+    "KeyfileNotFound",
+    "SignatureVerifyFailed",
+    "SigningKeyLoadFailed",
+    "VerifyKeyLoadFailed",
+)
 
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from aiohttp.client_reqrep import ClientResponse
@@ -23,13 +35,16 @@ class TNBException(Exception):
     pass
 
 
+# HTTP errors
+
+
 class HTTPException(TNBException):
     """
     Base exception for any HTTP errors.
 
-     Attributes
-     ----------
-     response: :class:`aiohttp.ClientResponse`
+    Attributes
+    ----------
+    response: :class:`aiohttp.ClientResponse`
         The response from the failed request.
 
     text: :class:`str`
@@ -71,6 +86,67 @@ class NetworkServerError(HTTPException):
     Exception representing an HTTP 503 response.
 
     :class:`HTTPException` subclass.
+    """
+
+    pass
+
+
+# Validator errors
+
+
+class ValidatorException(TNBException):
+    """
+    Base exception for any response validation errors.
+    """
+
+
+# LocalAccount errors
+
+
+class KeysignException(TNBException):
+    """
+    Base exception for any key signing errors.
+
+    Attributes
+    ----------
+    message: :class:`str`
+
+    original: Optional[:class:`Exception`]
+        The original exception that caused this one. May be ``None``.
+    """
+
+    def __init__(self, message: str, *, original: Optional[Exception] = None):
+        self.message = message
+        self.orignal = original
+
+
+class KeyfileNotFound(KeysignException):
+    """
+    Exception indicating a specified private key file was not present.
+    """
+
+    pass
+
+
+class SigningKeyLoadFailed(KeysignException):
+    """
+    Exception indicating a specified private key was not valid.
+    """
+
+    pass
+
+
+class VerifyKeyLoadFailed(KeysignException):
+    """
+    Exception indicating a specified public key was not valid.
+    """
+
+    pass
+
+
+class SignatureVerifyFailed(KeysignException):
+    """
+    Exception indicating a signature verification failed.
     """
 
     pass

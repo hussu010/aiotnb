@@ -1203,6 +1203,7 @@ div.code-block-caption {
   .sub-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
   }
 
   .sub-header > label {

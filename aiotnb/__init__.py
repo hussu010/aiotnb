@@ -32,5 +32,5 @@ __version__ = "0.0.1a"
 
 from .core import *
 from .exceptions import *
-from .http_client import *
+from .http import *
 from .models import *
