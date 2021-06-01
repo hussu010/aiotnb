@@ -55,6 +55,14 @@ Keypair Account Management
 .. autoclass:: LocalAccount
     :members:
 
+
+Verify a Keypair
+~~~~~~~~~~~~~~~~~
+
+Check if a Keypair is valid
+
+.. autofunction:: is_valid_keypair
+
 Exceptions
 -----------
 

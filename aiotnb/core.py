@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Union
 
-__all__ = ("connect_to_bank", "connect_to_pv", "connect_to_cv", "LocalAccount")
+__all__ = ("connect_to_bank", "connect_to_pv", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
 import logging
 from pathlib import Path
@@ -469,7 +469,23 @@ class LocalAccount:
 
     def __str__(self):
         return f"Account[{self.account_number.decode(encoding='utf-8')}]"
-    
-def is_valid_keypair(account_number: VerifyKey, signing_key: SigningKey) -> bool:
-    return signing_key.verify_key == account_number
 
+
+def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
+    """
+    Takes an account_number, a signing_key and returns whether they are valid or not.
+
+    Parameters
+    ----------
+    account_number: :class:`bytes`
+        The signed message data to validate.
+
+    signing_key: :class:`bytes`
+        The signature data attached to the message.
+
+    Returns
+    -------
+    :class:`bool`
+        The bool representing whether the keypair is valid
+    """
+    return SigningKey(signing_key).verify_key == VerifyKey(account_number)
