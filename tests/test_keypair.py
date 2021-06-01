@@ -10,7 +10,7 @@ import pytest
 from nacl.encoding import HexEncoder
 from nacl.signing import SignedMessage
 
-from aiotnb.core import LocalAccount
+from aiotnb.core import LocalAccount, is_valid_keypair
 
 keypair_1 = LocalAccount.generate()
 keypair_2 = LocalAccount.generate()
@@ -68,3 +68,13 @@ def test_sign_load_raw():
     message = keypair_2.verify_raw(HexEncoder.encode(MESSAGE), stored_message.signature, keypair_1.account_number)
 
     assert message == MESSAGE
+
+
+def test_is_valid_keypair():
+    assert is_valid_keypair(
+        bytes.fromhex(keypair_1.account_number.decode("utf-8")), bytes.fromhex(keypair_1.signing_key.decode("utf-8"))
+    )
+    assert not is_valid_keypair(
+        bytes.fromhex("8e8efdaa4cf11f8350720d29c8cef0c6fda728c822ba03fa5e2533416dd03ff5"),
+        bytes.fromhex(keypair_1.signing_key.decode("utf-8")),
+    )
