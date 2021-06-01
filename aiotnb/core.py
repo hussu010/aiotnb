@@ -478,14 +478,25 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
     Parameters
     ----------
     account_number: :class:`bytes`
-        The signed message data to validate.
+        The account number of the keypair to validate.
 
     signing_key: :class:`bytes`
-        The signature data attached to the message.
+        The signing key of the keypair to validate.
 
     Returns
     -------
     :class:`bool`
-        The bool representing whether the keypair is valid
+        The bool representing whether the keypair is valid.
     """
-    return SigningKey(signing_key).verify_key == VerifyKey(account_number)
+    try:
+        signing_key = SigningKey(signing_key)
+    except Exception as e:
+        log.error("signing key load failed")
+        raise SigningKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
+
+    try:
+        account_number = VerifyKey(account_number)
+    except Exception as e:
+        log.error("accountnumber load failed")
+        raise VerifyKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
+    return signing_key.verify_key == account_number
