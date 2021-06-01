@@ -469,3 +469,7 @@ class LocalAccount:
 
     def __str__(self):
         return f"Account[{self.account_number.decode(encoding='utf-8')}]"
+    
+def is_valid_keypair(account_number: VerifyKey, signing_key: SigningKey) -> bool:
+    return signing_key.verify_key == account_number
+
