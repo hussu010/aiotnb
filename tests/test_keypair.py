@@ -72,9 +72,9 @@ def test_sign_load_raw():
 
 def test_is_valid_keypair():
     assert is_valid_keypair(
-        bytes.fromhex(keypair_1.account_number.decode("utf-8")), bytes.fromhex(keypair_1.signing_key.decode("utf-8"))
+        HexEncoder.decode(keypair_1.account_number), HexEncoder.decode(keypair_1.signing_key)
     )
     assert not is_valid_keypair(
         bytes.fromhex("8e8efdaa4cf11f8350720d29c8cef0c6fda728c822ba03fa5e2533416dd03ff5"),
-        bytes.fromhex(keypair_1.signing_key.decode("utf-8")),
+        HexEncoder.decode(keypair_1.signing_key),
     )
