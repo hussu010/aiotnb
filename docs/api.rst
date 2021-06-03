@@ -63,6 +63,7 @@ Check if a Keypair is valid
 
 .. autofunction:: is_valid_keypair
 
+
 Exceptions
 -----------
 
@@ -91,6 +92,7 @@ Exceptions
     .. autoexception:: SignatureVerifyFailed
 
     .. autoexception:: ValidatorException
+        :members:
 
 
 Exception Reference

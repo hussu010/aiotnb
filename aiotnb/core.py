@@ -28,7 +28,7 @@ from .exceptions import (
 from .http import HTTPClient, HTTPMethod, Route
 from .models import Bank, ConfirmationValidator, PrimaryValidator
 
-log = logging.getLogger(__name__)
+_log: logging.Logger = logging.getLogger(__name__)
 
 
 async def connect_to_bank(bank_address: str, *, use_https: bool = False, **kwargs: Any) -> Bank:
@@ -301,11 +301,11 @@ class LocalAccount:
                 raw_key = file_path.read_bytes()
 
             except Exception as e:
-                log.error("keyfile could not be read")
+                _log.error("keyfile could not be read")
                 raise KeysignException("keyfile could not be read", original=e) from e
 
         else:
-            log.error("keyfile path was not found")
+            _log.error("keyfile path was not found")
             raise KeyfileNotFound(f"'{file_path.name}' was not found on the system")
 
         signing_key: SigningKey
@@ -314,7 +314,7 @@ class LocalAccount:
             signing_key = SigningKey(raw_key, encoder=HexEncoder)
 
         except Exception as e:
-            log.error("private key load failed")
+            _log.error("private key load failed")
             raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
 
         return cls(signing_key)
@@ -353,11 +353,11 @@ class LocalAccount:
                 file_path.write_bytes(self.signing_key)
 
             except Exception as e:
-                log.error("keyfile write failed")
+                _log.error("keyfile write failed")
                 raise KeysignException("keyfile could not be written", original=e) from e
 
         else:
-            log.error("keyfile already exists, not overwriting.")
+            _log.error("keyfile already exists, not overwriting.")
             raise KeyfileNotFound(f"'{file_path.name}' already exists")
 
     def sign_message(self, message: bytes) -> SignedMessage:
@@ -406,7 +406,7 @@ class LocalAccount:
             verified_message = verify_key.verify(signed_message, encoder=HexEncoder)
 
         except BadSignatureError as e:
-            log.error("verify: signature failed")
+            _log.error("verify: signature failed")
             raise SignatureVerifyFailed("verify signature bad", original=e) from e
 
         return verified_message
@@ -446,22 +446,23 @@ class LocalAccount:
             verified_message = vk.verify(message, HexEncoder.decode(signature), encoder=HexEncoder)
 
         except NACLValueError as e:
-            log.error("verify_raw: public key failed")
+            _log.error("verify_raw: public key failed")
             raise VerifyKeyLoadFailed("verify_raw invalid key", original=e) from e
 
         except BadSignatureError as e:
-            log.error("verify_raw: signature failed")
+            _log.error("verify_raw: signature failed")
             raise SignatureVerifyFailed("verify_raw signature bad", original=e) from e
 
         except Exception as e:
-            log.error("verify_raw: other error")
+            _log.error("verify_raw: other error")
             raise KeysignException("other error, probably bad signature", original=e) from e
 
         return verified_message
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object):
         if not isinstance(other, LocalAccount):
             return NotImplemented
+
         return self._sign_key == other._sign_key and self._verify_key == other._verify_key
 
     def __repr__(self):
@@ -473,7 +474,7 @@ class LocalAccount:
 
 def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
     """
-    Takes an account_number, a signing_key and returns whether they are valid or not.
+    Takes an account_number, a signing_key and returns whether they are of the same keypair.
 
     Parameters
     ----------
@@ -483,20 +484,29 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
     signing_key: :class:`bytes`
         The signing key of the keypair to validate.
 
+    Raises
+    ------
+    :exc:`SigningKeyLoadFailed`
+        The signing key was not a valid key.
+
+    :exc:`VerifyKeyLoadFailed`
+        The account number was not a valid key.
+
     Returns
     -------
     :class:`bool`
         The bool representing whether the keypair is valid.
     """
     try:
-        signing_key = SigningKey(signing_key)
+        sign_key = SigningKey(signing_key, encoder=HexEncoder)
     except Exception as e:
-        log.error("signing key load failed")
+        _log.error("signing key load failed")
         raise SigningKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
 
     try:
-        account_number = VerifyKey(account_number)
+        pub_key = VerifyKey(account_number, encoder=HexEncoder)
     except Exception as e:
-        log.error("accountnumber load failed")
+        _log.error("accountnumber load failed")
         raise VerifyKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
-    return signing_key.verify_key == account_number
+
+    return sign_key.verify_key == pub_key

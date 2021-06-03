@@ -31,7 +31,7 @@ from . import __version__
 
 __all__ = ("Route", "HTTPMethod", "HTTPClient")
 
-log = logging.getLogger(__name__)
+_log: logging.Logger = logging.getLogger(__name__)
 
 
 class HTTPMethod(Enum):
@@ -43,9 +43,6 @@ class HTTPMethod(Enum):
 
 
 class Route:
-    method: HTTPMethod
-    path: str
-
     def __init__(self, method: HTTPMethod, path: Union[str, URL], **params: Any):
         self.method = method
 
@@ -104,7 +101,7 @@ class HTTPClient:
             self.__session = ClientSession(connector=self.connector)
 
         else:
-            log.warn("init_session called with existing session")
+            _log.warn("init_session called with existing session")
 
     async def close(self):
         if self.__session:
@@ -127,7 +124,7 @@ class HTTPClient:
             self.__session = cast(ClientSession, self.__session)
 
         async with self.__session.request(method, url, **kwargs) as response:
-            log.debug(f"{method} '{url}' returned {response.status}")
+            _log.debug(f"{method} '{url}' returned {response.status}")
 
             data = await self.parse_data(response)
 
@@ -142,7 +139,7 @@ class HTTPClient:
                 if TYPE_CHECKING:
                     data = cast(str, data)  # Python typing is such a mess
 
-                log.error(f"^ {method} failed ({response.reason})")
+                _log.error(f"^ {method} failed ({response.reason})")
 
                 if response.status == 403:
                     raise Forbidden(response, data)

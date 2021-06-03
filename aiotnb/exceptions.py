@@ -6,6 +6,8 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+from schema import SchemaError
+
 __all__ = (
     "TNBException",
     "HTTPException",
@@ -21,7 +23,7 @@ __all__ = (
 )
 
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 if TYPE_CHECKING:
     from aiohttp.client_reqrep import ClientResponse
@@ -97,7 +99,23 @@ class NetworkServerError(HTTPException):
 class ValidatorException(TNBException):
     """
     Base exception for any response validation errors.
+
+    Attributes
+    ----------
+    data: Mapping[:class:`str`, Any]
+        The response data that failed validation.
+
+    original: :class:`SchemaError`
+        The exception that was the direct cause of this one.
+
+    message: :class:`str`
+        Explanation of what went wrong while validating.`
     """
+
+    def __init__(self, data: Mapping[str, Any], original: SchemaError):
+        self.data = data
+        self.original = original
+        self.message = original.code
 
 
 # LocalAccount errors
