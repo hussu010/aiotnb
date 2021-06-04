@@ -28,10 +28,8 @@ __author__ = "AnonymousDapper"
 __license__ = "MIT"
 __copyright__ = "Copyright 2021 - present AnonymousDapper"
 version_info: VersionInfo = VersionInfo(0, 0, 1, "alpha")
-__version__ = "0.0.1a"
+__version__ = "0.0.1a0"
 
 from .core import *
 from .exceptions import *
-from .http import *
 from .models import *
-from .validation import *
