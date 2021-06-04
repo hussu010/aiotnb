@@ -1,0 +1,30 @@
+name: "Code Style & Typing QA"
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  check-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.8.0
+
+      - name: Isort
+        uses: isort/isort-action@v0.1.0
+        with:
+          requirementsFiles: "requirements.txt dev-requirements.txt"
+
+      - name: Black
+        uses: psf/black@stable
+        with:
+          src: "./aiotnb"
+
+      - name: Pyright
+        uses: jakebailey/pyright-action@v1
+        with:
+          python-version: 3.8
+          extra-args: "aiotnb"
