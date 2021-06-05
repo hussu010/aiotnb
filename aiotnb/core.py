@@ -238,7 +238,7 @@ class LocalAccount:
     """
     Represents a local keypair account.
 
-    .. container:: operations
+    .. admonition:: Supported Operations
 
         .. describe:: x == y
             Checks if the keypairs for both accounts are equal.
@@ -253,7 +253,7 @@ class LocalAccount:
         The signing key for the account as hex-encoded bytes.
         The signing key is the **private** key.
 
-        .. warning:: Do not share this key. This is the private key and can be used to impersonate you.
+        .. caution:: Do not share this key. This is the private key and can be used to impersonate you.
     """
 
     def __init__(self, private_key: SigningKey):

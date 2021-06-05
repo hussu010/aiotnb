@@ -12,11 +12,10 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Mapping, TypeVar, cast
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from yarl import URL
 
 from aiotnb.exceptions import ValidatorException
 
-from ._utils import ISO8601UTCTimestamp
+from ._utils import ISO8601UTCTimestamp, partial
 
 if TYPE_CHECKING:
     from typing_extensions import ParamSpec
@@ -25,8 +24,8 @@ if TYPE_CHECKING:
     _M = TypeVar("_M", bound=Mapping[str, Any])
 
 
-def validate_with(schema: Schema) -> Callable[[Callable[_A, Awaitable[_M]]], Callable[_A, Awaitable[_M]]]:
-    def deco(fn: Callable[_A, Awaitable[_M]]) -> Callable[_A, Awaitable[_M]]:
+def validate_with(schema: Schema):
+    def deco(fn: Callable[_A, Awaitable[_M]]) -> Callable[_A, Awaitable[Any]]:
         @wraps(fn)
         async def inner(*args: _A.args, **kwargs: _A.kwargs) -> Any:
             result = await fn(*args, **kwargs)
@@ -42,19 +41,3 @@ def validate_with(schema: Schema) -> Callable[[Callable[_A, Awaitable[_M]]], Cal
         return inner
 
     return deco
-
-
-# def validate_with(schema: Schema, fn: Callable[A, Awaitable[M]]) -> Callable[A, Awaitable[Any]]:
-#     @wraps(fn)
-#     async def inner(*args: A.args, **kwargs: A.kwargs) -> Any:
-#         result = await fn(*args, **kwargs)
-
-#         try:
-#             transformed_result = schema.validate(result)
-
-#         except SchemaError as e:
-#             raise ValidatorException(result, e) from e
-
-#         return transformed_result
-
-#     return inner

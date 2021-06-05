@@ -13,10 +13,18 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Union, cast
 from urllib.parse import quote as _quote
 
-import ujson as json
 from aiohttp import ClientSession
 
 from .exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
+
+try:
+    import ujson as json
+
+    _USING_FAST_JSON = True
+except ImportError:
+    _USING_FAST_JSON = False
+    import json
+
 
 if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
@@ -32,6 +40,10 @@ from . import __version__
 __all__ = ("Route", "HTTPMethod", "HTTPClient")
 
 _log: logging.Logger = logging.getLogger(__name__)
+
+
+if not _USING_FAST_JSON:
+    _log.warn("ujson not installed, defaulting to json")
 
 
 class HTTPMethod(Enum):

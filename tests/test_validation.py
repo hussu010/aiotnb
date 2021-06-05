@@ -4,7 +4,7 @@ The MIT License (MIT)
 Copyright (c) 2021 AnonymousDapper
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Type, Union, cast
 
 import pytest
@@ -15,7 +15,7 @@ from schema import Optional as sOptional
 from schema import Or, Schema, Use
 from yarl import URL
 
-from aiotnb import ISO8601UTCTimestamp, validate_with
+from aiotnb.validation import ISO8601UTCTimestamp, validate_with
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,7 +31,7 @@ async def test_unchanged():
     assert result == {}
 
 
-@validate_with(Schema({"timestamp": ISO8601UTCTimestamp(error="bad timestamp")}))
+@validate_with(Schema({"timestamp": ISO8601UTCTimestamp}))
 async def timestamp_data(stamp: str):
     return {"timestamp": stamp}
 
@@ -39,7 +39,7 @@ async def timestamp_data(stamp: str):
 async def test_iso_timestamp():
     result = await timestamp_data("2020-10-08T02:18:07.346849Z")
 
-    assert result == dict(timestamp=datetime(2020, 10, 8, 2, 18, 7, 346849))
+    assert result == dict(timestamp=datetime(2020, 10, 8, 2, 18, 7, 346849, tzinfo=timezone.utc))
 
 
 complex_schema = Schema(
@@ -50,8 +50,8 @@ complex_schema = Schema(
         "results": [
             {
                 "id": str,
-                "created_date": ISO8601UTCTimestamp(),
-                "modified_date": ISO8601UTCTimestamp(),
+                "created_date": ISO8601UTCTimestamp,
+                "modified_date": ISO8601UTCTimestamp,
                 "account_number": And(str, Use(lambda s: VerifyKey(s.encode("utf-8"), encoder=HexEncoder))),
                 "trust": And(str, Use(float)),
             }
@@ -95,8 +95,8 @@ async def test_complex():
         "results": [
             {
                 "id": "5a8c7990-393a-4299-ae92-2f096a2c7f43",
-                "created_date": datetime(2020, 10, 8, 2, 18, 7, 346849),
-                "modified_date": datetime(2020, 10, 8, 2, 18, 7, 346914),
+                "created_date": datetime(2020, 10, 8, 2, 18, 7, 346849, tzinfo=timezone.utc),
+                "modified_date": datetime(2020, 10, 8, 2, 18, 7, 346914, tzinfo=timezone.utc),
                 "account_number": VerifyKey(
                     b"\xa3~(6\x80Yu\xf34\x10\x8bUR64\xc9\x95\xbd*M\xb6\x10\x06/@E\x10a~\x83\x12o"
                 ),
@@ -104,8 +104,8 @@ async def test_complex():
             },
             {
                 "id": "2682963f-06b1-47d7-a2e1-1f8ec6ae98dc",
-                "created_date": datetime(2020, 10, 8, 2, 39, 44, 71810),
-                "modified_date": datetime(2020, 10, 8, 2, 39, 44, 71853),
+                "created_date": datetime(2020, 10, 8, 2, 39, 44, 71810, tzinfo=timezone.utc),
+                "modified_date": datetime(2020, 10, 8, 2, 39, 44, 71853, tzinfo=timezone.utc),
                 "account_number": VerifyKey(
                     b"\xcc\x8f\xb4\xeb\xbd+\x9a\x98\xa7g\xe8\x01\xac+\r)l\xed\x88\xb5\xd3\xb7\xd6\xd6\xe1.\x1d-v5\xd7$"
                 ),
