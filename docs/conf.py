@@ -41,7 +41,8 @@ extensions = [
     # "details",
     "exception_hierarchy",
     "attributetable",
-    "sphinx_copybutton" "resourcelinks",
+    "sphinx_copybutton",
+    "resourcelinks",
     # "nitpick_file_ignorer",
 ]
 
