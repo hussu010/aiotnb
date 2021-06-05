@@ -442,9 +442,6 @@ div.code-block-caption {
   text-align: center;
 }
 
-
-
-
 .highlight {
     border: 2px solid var(--color-background-border);
 }
@@ -458,4 +455,45 @@ div.code-block-caption {
   color:  var(--color-foreground-primary);
   font-weight: unset;
   font-family:  unset;
+}
+
+
+/* RTD hacks */
+div.injected div.rst-versions {
+  background:  var(--color-background-secondary);
+  box-shadow: 0 0.2rem 0.5rem rgb(0 0 0 / 5%), 0 0 0.0625rem rgb(0 0 0 / 10%);
+}
+
+div.injected div.rst-versions div.rst-other-versions {
+  background: var(--color-background-primary);
+}
+
+div.injected div.rst-versions div.rst-other-versions #flyout-search-form input {
+  border: 2px solid var(--color-background-border);
+  border-radius: 0.25rem;
+}
+
+div.injected div.rst-versions div.rst-other-versions hr {
+  border-top: 2px solid var(--color-foreground-border);
+}
+
+div.injected div.rst-versions div.rst-other-versions dt {
+  color: var(--color-foreground-muted);
+}
+
+div.injected div.rst-versions div.rst-other-versions a {
+  color: var(--color-link)
+}
+
+div.injected div.rst-versions span.rst-current-version {
+  background-color:  var(--color-background-secondary);
+  color:  var(--color-api-name);
+}
+
+div.injected div.rst-versions span.rst-current-version:hover {
+  background-color:  var(--color-background-hover);
+}
+
+div.injected div.rst-versions span.rst-current-version .fa {
+  color:  var(--color-foreground-secondary);
 }
