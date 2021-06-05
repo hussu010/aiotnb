@@ -10,12 +10,41 @@ Welcome to aiotnb
 
 aiotnb is a simple, intuitive, and safe client for the TNB network.
 
-Reference 
+Features 
 ---------
 
-Every detail about the API is here.
+some features
+
+
+Getting Started
+----------------
+
+getting started
+
+.. toctree::
+   :maxdepth: 1
+
+   introduction
+   quickstart
+
+
+Reference
+----------
+
+All the information.
 
 .. toctree::
    :maxdepth: 1
 
    api
+
+
+Links
+------
+
+More information.
+
+.. toctree::
+   :maxdepth: 1
+   
+   Github Repository <https://github.com/AnonymousDapper/aiotnb>

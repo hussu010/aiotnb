@@ -12,7 +12,7 @@ readme = Path("README.md").read_text()
 with Path("aiotnb/__init__.py").open("r") as f:
     version = re.search(r"^__version__ = \"([^\"]+)\"", f.read(), re.M).group(1)
 
-requires_optional = {"docs": ["sphinx>=4.0.2", "sphinxcontrib_trio>=1.1.2"]}
+requires_optional = {"docs": ["sphinx>=3.5.4", "sphinxcontrib_trio>=1.1.2", "furo>=2021.4.11b34"]}
 
 setup(
     name="aiotnb",

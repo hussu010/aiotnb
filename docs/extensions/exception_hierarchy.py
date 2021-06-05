@@ -1,3 +1,6 @@
+# Copyright (c) Rapptz
+#   Used with permission.
+
 # type: ignore
 
 from docutils import nodes

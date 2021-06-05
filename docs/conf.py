@@ -32,17 +32,17 @@ sys.path.append(os.path.abspath("extensions"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "builder",
+    # "builder",
     "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinxcontrib_trio",
-    "details",
+    # "details",
     "exception_hierarchy",
     "attributetable",
-    "resourcelinks",
-    "nitpick_file_ignorer",
+    "sphinx_copybutton" "resourcelinks",
+    # "nitpick_file_ignorer",
 ]
 
 autodoc_member_order = "bysource"
@@ -135,7 +135,8 @@ exclude_patterns = ["_build"]
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "friendly"
+pygments_style = "lovelace"
+pygments_dark_style = "stata-dark"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -153,7 +154,24 @@ html_experimental_html5_writer = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "basic"
+html_theme = "furo"
+
+html_title = "aiotnb"
+
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#DE2A33",
+        "color-brand-content": "#DE2A33",
+        "color-api-pre-name": "#39B3A4",
+        "color-api-name": "#39B3A4",
+        "color-api-keyword": "#4e2a2a",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#ff6d6a",
+        "color-brand-content": "#ff6d6a",
+        "color-api-keyword": "#9C866B",
+    },
+}
 
 html_context = {}
 
@@ -181,7 +199,7 @@ resource_links = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-# html_logo = None
+html_logo = "images/96px.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -192,6 +210,10 @@ resource_links = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+# html_css_files = ["main.css", "icons.css"]
+
+html_js_files = ["main.js"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -253,7 +275,6 @@ html_static_path = ["_static"]
 # implements a search results scorer. If empty, the default will be used.
 html_search_scorer = "_static/scorer.js"
 
-html_js_files = ["custom.js", "settings.js", "copy.js", "sidebar.js"]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "aiotnb.pydoc"

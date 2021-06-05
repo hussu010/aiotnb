@@ -5,8 +5,9 @@ API Reference
 
 This is the entire API of aiotnb.
 
-.. note::
-    aiotnb uses the Python logging module for errors and diagnostic information. If not configured, these logs will not be saved. Check :ref:`logging_setup` for information on how to setup and use ``logging`` with aiotnb.
+.. seealso::
+    aiotnb uses the Python logging module for errors and diagnostic information. If not configured, these logs will not be saved.
+    Check :ref:`logging_setup` for information on how to setup and use ``logging`` with aiotnb.
 
 Version Info
 -------------
@@ -64,35 +65,65 @@ Check if a Keypair is valid
 .. autofunction:: is_valid_keypair
 
 
+Models
+-------
+
+Bank
+~~~~~
+
+.. attributetable:: Bank
+
+.. autoclass:: Bank
+    :members:
+
+Primary Validator
+~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: PrimaryValidator
+
+.. autoclass:: PrimaryValidator
+    :members:
+
+Confirmation Validator
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationValidator
+
+.. autoclass:: ConfirmationValidator
+    :members:
+
+
+
+
 Exceptions
 -----------
 
-    The following is a list of possible exceptions thrown by aiotnb.
+The following is a list of possible exceptions thrown by aiotnb.
 
-    .. autoexception:: TNBException
+.. autoexception:: TNBException
 
-    .. autoexception:: HTTPException
-        :members:
+.. autoexception:: HTTPException
+    :members:
 
-    .. autoexception:: Forbidden
+.. autoexception:: Forbidden
 
-    .. autoexception:: NotFound
+.. autoexception:: NotFound
 
-    .. autoexception:: NetworkServerError
+.. autoexception:: NetworkServerError
 
-    .. autoexception:: KeysignException
-        :members:
+.. autoexception:: KeysignException
+    :members:
 
-    .. autoexception:: KeyfileNotFound
+.. autoexception:: KeyfileNotFound
 
-    .. autoexception:: SigningKeyLoadFailed
+.. autoexception:: SigningKeyLoadFailed
 
-    .. autoexception:: VerifyKeyLoadFailed
+.. autoexception:: VerifyKeyLoadFailed
 
-    .. autoexception:: SignatureVerifyFailed
+.. autoexception:: SignatureVerifyFailed
 
-    .. autoexception:: ValidatorException
-        :members:
+.. autoexception:: ValidatorException
+    :members:
 
 
 Exception Reference
@@ -112,4 +143,3 @@ Exception Reference
                 - :exc:`SigningKeyLoadFailed`
                 - :exc:`VerifyKeyLoadFailed`
                 - :exc:`SignatureVerifyFailed`
-

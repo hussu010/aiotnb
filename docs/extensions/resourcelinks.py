@@ -1,3 +1,6 @@
+# Copyright (c) Rapptz
+#   Used with permission.
+
 # type: ignore
 
 # Credit to sphinx.ext.extlinks for being a good starter

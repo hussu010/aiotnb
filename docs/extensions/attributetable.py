@@ -1,3 +1,8 @@
+# Most of this code is Copyright (c) Rapptz.
+#  Used with permission.
+#
+
+
 # type: ignore
 
 import importlib
@@ -225,11 +230,19 @@ def get_class_results(lookup, modulename, name, fullname):
                 key = _("Methods")
                 badge = attributetablebadge("async", "async")
                 badge["badge-type"] = _("coroutine")
+
             elif isinstance(value, classmethod):
                 key = _("Methods")
                 label = f"{name}.{attr}"
                 badge = attributetablebadge("cls", "cls")
                 badge["badge-type"] = _("classmethod")
+
+            elif isinstance(value, staticmethod):
+                key = _("Methods")
+                label = f"{name}.{attr}"
+                badge = attributetablebadge("static", "static")
+                badge["badge-type"] = _("staticmethod")
+
             elif inspect.isfunction(value):
                 if doc.startswith(("A decorator", "A shortcut decorator")):
                     # finicky but surprisingly consistent
