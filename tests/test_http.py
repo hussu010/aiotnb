@@ -131,34 +131,3 @@ async def test_502(client):
 
     except Exception as e:
         assert isinstance(e, HTTPException)
-
-
-# class TestBasicHTTP:
-#     @classmethod
-#     def setup_class(cls):
-#         cls.client = HTTPClient()
-
-#     @pytest.mark.order(1)
-#     async def test_setup(self, loop):
-#         await self.client._init_session()
-
-#         assert self.client._session is not None
-
-#     @pytest.mark.order(2)
-#     async def test_get(self):
-#         # await self.client._session._loop.close()
-#         # self.client._session._loop = loop
-#         loop = asyncio.get_running_loop()
-#         self.client._session._loop = loop
-#         payload = {"test": "yes"}
-#         route = Route(HTTPMethod.Get, "/get")
-
-#         result = await asyncio.wait_for(
-#             asyncio.shield(self.client.request(route.resolve("https://httpbin.org"), params=payload)), None
-#         )
-
-#         assert result["args"] == payload
-
-#     @pytest.mark.order(3)
-#     async def test_shutdown(self):
-#         await self.client.close()

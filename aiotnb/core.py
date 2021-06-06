@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import TYPE_CHECKING
 
 __all__ = ("connect_to_bank", "connect_to_pv", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
@@ -27,6 +27,9 @@ from .exceptions import (
 )
 from .http import HTTPClient, HTTPMethod, Route
 from .models import Bank, ConfirmationValidator, PrimaryValidator
+
+if TYPE_CHECKING:
+    from typing import Any, Union
 
 _log: logging.Logger = logging.getLogger(__name__)
 

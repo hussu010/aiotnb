@@ -6,18 +6,21 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("ISO8601UTCTimestamp", "partial", "AccountNumber", "Url")
+__all__ = ("AccountNumber", "BalanceLock", "ISO8601UTCTimestamp", "OptionalVal", "partial", "Signature", "Url")
 
 import datetime
 from enum import Enum
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
-from schema import And, Schema, Use
+from schema import And, Or, Schema, Use
 from yarl import URL
 
-R = TypeVar("R")
+if TYPE_CHECKING:
+    from typing import Any, Callable, Optional, TypeVar
+
+    R = TypeVar("R")
 
 # as soon as we have proper ParamSpec support, delete this mess
 def partial(fn: Callable[..., R], *args: ..., **kwargs: ...) -> Callable[..., R]:
@@ -71,3 +74,5 @@ BalanceLock = And(str, Use(_to_bytes))
 Url = And(str, Use(URL))
 
 Signature = And(str, Use(partial(_to_bytes, exact_len=128)))
+
+OptionalVal = partial(Or, None)

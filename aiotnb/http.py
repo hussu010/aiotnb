@@ -10,7 +10,7 @@ import asyncio
 import logging
 import sys
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, cast
 from urllib.parse import quote as _quote
 
 from aiohttp import ClientSession
@@ -27,6 +27,7 @@ except ImportError:
 
 
 if TYPE_CHECKING:
+    from typing import Any, Mapping, Optional, Tuple, Union
     from asyncio import AbstractEventLoop
 
     from yarl import URL

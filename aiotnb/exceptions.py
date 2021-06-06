@@ -23,9 +23,11 @@ __all__ = (
 )
 
 
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing import Any, Mapping, Optional
+
     from aiohttp.client_reqrep import ClientResponse
 
 

@@ -5,17 +5,19 @@ Copyright (c) 2021 AnonymousDapper
 """
 
 from datetime import datetime, timezone
-from typing import Optional, Type, Union, cast
 
 import pytest
-from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
-from schema import And
-from schema import Optional as sOptional
-from schema import Or, Schema, Use
+from schema import And, Optional, Schema, Use
 from yarl import URL
 
-from aiotnb.validation import ISO8601UTCTimestamp, validate_with
+from aiotnb.validation import (
+    AccountNumber,
+    ISO8601UTCTimestamp,
+    OptionalVal,
+    Url,
+    validate_with,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -45,14 +47,14 @@ async def test_iso_timestamp():
 complex_schema = Schema(
     {
         "count": int,
-        "next": Or(None, And(Use(URL))),
-        "previous": Or(None, And(Use(URL))),
+        "next": OptionalVal(Url),
+        "previous": OptionalVal(Url),
         "results": [
             {
                 "id": str,
                 "created_date": ISO8601UTCTimestamp,
                 "modified_date": ISO8601UTCTimestamp,
-                "account_number": And(str, Use(lambda s: VerifyKey(s.encode("utf-8"), encoder=HexEncoder))),
+                "account_number": AccountNumber,
                 "trust": And(str, Use(float)),
             }
         ],
@@ -115,3 +117,15 @@ async def test_complex():
     }
 
     assert result == test_data
+
+
+@validate_with(Schema({int: int}))
+async def should_fail_simple_data():
+    return {}
+
+
+@pytest.mark.xfail(strict=True)
+async def test_should_fail_simple():
+    result = await should_fail_simple_data()
+
+    assert True
