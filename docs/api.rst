@@ -35,9 +35,9 @@ See the TNB `Bank API <https://thenewboston.com/bank-api/>`_ documentation.
 Connect to a Primary Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the TNB `Primary Validator API <https://thenewboston.com/primary-validator-api/>`_ documentation.
+See the TNB `Validator API <https://thenewboston.com/primary-validator-api/>`_ documentation.
 
-.. autofunction:: connect_to_pv
+.. autofunction:: connect_to_validator
 
 
 Connect to a Confirmation Validator
@@ -79,9 +79,9 @@ Bank
 Primary Validator
 ~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: PrimaryValidator
+.. attributetable:: Validator
 
-.. autoclass:: PrimaryValidator
+.. autoclass:: Validator
     :members:
 
 Confirmation Validator

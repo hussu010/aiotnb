@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-__all__ = ("connect_to_bank", "connect_to_pv", "connect_to_cv", "LocalAccount", "is_valid_keypair")
+__all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
 import logging
 from pathlib import Path
@@ -53,7 +53,7 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
         Whether to enable HTTPS. Defaults to ``False``.
 
     loop: Optional[:class:`asyncio.AbstractEventLoop`]
-        The :class:`asyncio.AbstractEventLoop` to use for the underlying HTTP client.
+        The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
     connector: Optional[:class:`aiohttp.BaseConnector`]
@@ -126,7 +126,7 @@ async def connect_to_cv(
         Whether to enable HTTPS. Defaults to ``False``.
 
     loop: Optional[:class:`asyncio.AbstractEventLoop`]
-        The :class:`asyncio.AbstractEventLoop` to use for the underlying HTTP client.
+        The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
     connector: Optional[:class:`aiohttp.BaseConnector`]
@@ -199,7 +199,7 @@ async def connect_to_validator(
         Whether to enable HTTPS. Defaults to ``False``.
 
     loop: Optional[:class:`asyncio.AbstractEventLoop`]
-        The :class:`asyncio.AbstractEventLoop` to use for the underlying HTTP client.
+        The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
     connector: Optional[:class:`aiohttp.BaseConnector`]
