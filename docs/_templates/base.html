@@ -1,0 +1,25 @@
+<!-- Parts of this code are Copyright (c) Rapptz.
+  Used with permission.
+-->
+
+{%- extends "furo/base.html" -%}
+
+{#{%- block htmltitle -%}
+  <title>{{ title|striptags|e }} </title>
+{%- endblock -%}#}
+
+{%- block extrahead %}
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="{{ pathto('_static/main.css', 1)|e }}" type="text/css" />
+  
+  {%- if READTHEDOCS %}
+  <script>
+    if (typeof READTHEDOCS_DATA !== "undefined") {
+        if (!READTHEDOCS_DATA.features) {
+          READTHEDOCS_DATA.features = {};
+        }
+        READTHEDOCS_DATA.features.docsearch_disabled = true;
+      }
+  </script>
+  {%- endif %}
+{% endblock %}

@@ -1,0 +1,499 @@
+/* Parts of this code are Copyright (c) Rapptz.
+  Used with permission.
+*/
+
+
+/*// This file defines all the knobs that can be tweaked by end users.
+
+// Overall Layout Variables
+//
+// These are set here, since CSS variables can't be used in media queries,
+// which is where these would be used.
+$content-padding: 3em;
+$content-padding--small: 1em;
+$content-width: 46em;
+$sidebar-width: 15em;
+$full-width: $content-width + 2 * ($content-padding + $sidebar-width);
+
+// Admonitions
+//
+// Structure of these: (color, key-in-$icons).
+// The colors are translated into CSS variables below, and icons are used for
+// the declarations.
+$admonition-default: #651fff "abstract";
+$admonitions: (
+  // Each of these has an reST directives for it.
+  "caution": #ff9100 "spark",
+  "warning": #ff9100 "warning",
+  "danger": #ff5252 "spark",
+  "attention": #ff5252 "warning",
+  "error": #ff5252 "failure",
+  "hint": #00c852 "question",
+  "important": #00bfa5 "flame",
+  "note": #00b0ff "pencil",
+  "seealso": #448aff "info",
+  "tip": #00c852 "info",
+  "admonition-todo": #808080 "pencil"
+);
+
+:root {
+  //////////////////////////////////////////////////////////////////////////////
+  // Fonts
+  //////////////////////////////////////////////////////////////////////////////
+  // These are adapted from https://systemfontstack.com/
+  --font-stack: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial,
+    sans-serif, Apple Color Emoji, Segoe UI Emoji;
+  --font-stack--monospace: "SFMono-Regular", Menlo, Consolas, Monaco,
+    Liberation Mono, Lucida Console, monospace;
+
+  --font-size--normal: 100%;
+  --font-size--small: 87.5%;
+  --font-size--small--2: 81.25%;
+  --font-size--small--3: 75%;
+  --font-size--small--4: 62.5%;
+
+  // Sidebar
+  --sidebar-caption-font-size: var(--font-size--small--2);
+  --sidebar-item-font-size: var(--font-size--small);
+  --sidebar-search-input-font-size: var(--font-size--small);
+
+  // Table of Contents
+  --toc-font-size: var(--font-size--small--3);
+  --toc-font-size--mobile: var(--font-size--normal);
+  --toc-title-font-size: var(--font-size--small--4);
+
+  // Admonitions
+  --admonition-font-size: 0.8125rem;
+  --admonition-title-font-size: 0.8125rem;
+
+  // Code
+  --code-font-size: var(--font-size--small--2);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Spacing
+  //////////////////////////////////////////////////////////////////////////////
+  --header-height: calc(
+    var(--sidebar-item-line-height) + 4 * #{var(--sidebar-item-spacing-vertical)}
+  );
+
+  // Sidebar
+  --sidebar-tree-space-above: 1.5rem;
+  --sidebar-caption-space-above: 1rem;
+
+  --sidebar-item-line-height: 1rem;
+  --sidebar-item-spacing-vertical: 0.5rem;
+  --sidebar-item-spacing-horizontal: 1rem;
+  --sidebar-item-height: calc(
+    var(--sidebar-item-line-height) + 2 *#{var(--sidebar-item-spacing-vertical)}
+  );
+
+  --sidebar-expander-width: var(--sidebar-item-height); // be square
+
+  --sidebar-search-space-above: 0.5rem;
+  --sidebar-search-input-spacing-vertical: 0.5rem;
+  --sidebar-search-input-spacing-horizontal: 0.5rem;
+  --sidebar-search-input-height: 1rem;
+  --sidebar-search-icon-size: var(--sidebar-search-input-height);
+
+  // Table of Contents
+  --toc-title-padding: 0.25rem 0;
+  --toc-spacing-vertical: 1.5rem;
+  --toc-spacing-horizontal: 1.5rem;
+  --toc-item-spacing-vertical: 0.4rem;
+  --toc-item-spacing-horizontal: 1rem;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Icons
+  //////////////////////////////////////////////////////////////////////////////
+  @each $name, $glyph in $icons {
+    --icon-#{$name}: #{$glyph};
+  }
+  --icon-admonition-default: var(--icon-#{nth($admonition-default, 2)});
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Overall Colors
+  //     To give the user more control, avoid using these colors directly
+  //     outside of this file. Instead, try to define more variables here that
+  //     based on these, and use them in the actual stylesheets.
+  //////////////////////////////////////////////////////////////////////////////
+  --color-problematic: #b30000;
+
+  // Base Colors
+  --color-foreground-primary: black; // for main text and headings
+  --color-foreground-secondary: #5a5c63; // for secondary text
+  --color-foreground-muted: #72747e; // for muted text
+  --color-foreground-border: #878787; // for content borders
+
+  --color-background-primary: white; // for content
+  --color-background-secondary: #f8f9fb; // for navigation + ToC
+  --color-background-hover: #efeff4ff; // for navigation-item hover
+  --color-background-hover--transparent: #efeff400;
+  --color-background-border: #eeebee; // for UI borders
+
+  // Announcements
+  --color-announcement-background: #000000dd;
+  --color-announcement-text: #eeebee;
+
+  // Brand colors
+  --color-brand-primary: #2962ff;
+  --color-brand-content: #2a5adf;
+
+  // API documentation
+  --color-api-overall: var(--color-foreground-muted);
+  --color-api-name: var(--color-brand-content);
+  --color-api-pre-name: var(--color-brand-content);
+  --color-api-paren: var(--color-foreground-secondary);
+  --color-api-keyword: var(--color-problematic);
+  --color-api-highlight-on-target: #ffffcc;
+
+  // Inline code background
+  --color-inline-code-background: var(--color-background-secondary);
+
+  // Highlighted text (search)
+  --color-highlighted-background: #ddeeff;
+  --color-highlighted-text: var(--color-foreground-primary);
+
+  // GUI Labels
+  --color-guilabel-background: #ddeeff80;
+  --color-guilabel-border: #bedaf580;
+  --color-guilabel-text: var(--color-foreground-primary);
+
+  // Admonitions!
+  --color-admonition-background: transparent;
+  --color-admonition-title: #{nth($admonition-default, 1)};
+  --color-admonition-title-background: #{rgba(nth($admonition-default, 1), 0.1)};
+
+  @each $name, $values in $admonitions {
+    --color-admonition-title--#{$name}: #{nth($values, 1)};
+    --color-admonition-title-background--#{$name}: #{rgba(
+        nth($values, 1),
+        0.1
+      )};
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Everything below this should be one of:
+  // - var(...)
+  // - *-gradient(...)
+  // - special literal values (eg: transparent, none)
+  //////////////////////////////////////////////////////////////////////////////
+
+  // Header
+  --color-header-background: var(--color-background-primary);
+  --color-header-border: var(--color-background-border);
+  --color-header-text: var(--color-foreground-primary);
+
+  // Sidebar (left)
+  --color-sidebar-background: var(--color-background-secondary);
+  --color-sidebar-background-border: var(--color-background-border);
+
+  --color-sidebar-brand-text: var(--color-foreground-primary);
+  --color-sidebar-caption-text: var(--color-foreground-muted);
+  --color-sidebar-link-text: var(--color-foreground-secondary);
+  --color-sidebar-link-text--top-level: var(--color-brand-primary);
+
+  --color-sidebar-item-background: var(--color-sidebar-background);
+  --color-sidebar-item-background--current: var(
+    --color-sidebar-item-background
+  );
+  --color-sidebar-item-background--hover: linear-gradient(
+    90deg,
+    var(--color-background-hover--transparent) 0%,
+    var(--color-background-hover) var(--sidebar-item-spacing-horizontal),
+    var(--color-background-hover) 100%
+  );
+
+  --color-sidebar-item-expander-background: transparent;
+  --color-sidebar-item-expander-background--hover: var(
+    --color-background-hover
+  );
+
+  --color-sidebar-search-text: var(--color-foreground-primary);
+  --color-sidebar-search-background: var(--color-background-secondary);
+  --color-sidebar-search-background--focus: var(--color-background-primary);
+  --color-sidebar-search-border: var(--color-background-border);
+  --color-sidebar-search-icon: var(--color-foreground-muted);
+
+  // Table of Contents
+  --color-toc-background: var(--color-background-primary);
+  --color-toc-title-text: var(--color-foreground-muted);
+  --color-toc-item-text: var(--color-foreground-secondary);
+  --color-toc-item-text--hover: var(--color-foreground-primary);
+  --color-toc-item-text--active: var(--color-brand-primary);
+
+  // Actual page contents
+  --color-content-foreground: var(--color-foreground-primary);
+  --color-content-background: transparent;
+
+  --color-link: var(--color-brand-content);
+  --color-link--hover: var(--color-brand-content);
+  --color-link-underline: var(--color-background-border);
+  --color-link-underline--hover: var(--color-foreground-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-problematic: #e25050;
+
+    // Base Colors
+    --color-foreground-primary: #ffffffd9; // for main text and headings
+    --color-foreground-secondary: #9ca0a5; // for secondary text
+    --color-foreground-muted: #81868d; // for muted text
+    --color-foreground-border: #666666; // for content borders
+
+    --color-background-primary: #131416; // for content
+    --color-background-secondary: #1a1c1e; // for navigation + ToC
+    --color-background-hover: #1e2124ff; // for navigation-item hover
+    --color-background-hover--transparent: #1e212400;
+    --color-background-border: #303335; // for UI borders
+
+    // Announcements
+    --color-announcement-background: #000000dd;
+    --color-announcement-text: #eeebee;
+
+    // Brand colors
+    --color-brand-primary: #2b8cee;
+    --color-brand-content: #368ce2;
+
+    // Highlighted text (search)
+    --color-highlighted-background: #083563;
+
+    // GUI Labels
+    --color-guilabel-background: #08356380;
+    --color-guilabel-border: #13395f80;
+
+    // API documentation
+    --color-api-highlight-on-target: #333300;
+
+    // Admonitions
+    --color-admonition-background: #18181a;
+  }
+}*/
+
+
+/*:root {
+
+}
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+  }
+}*/
+
+/* bold and fix the Parameter, Raises, etc. */
+/*dl.field-list > dt {
+  font-weight: bold;
+}
+
+/* remove flex from field lists *
+dl.field-list {
+  display: block;
+}*/
+
+/* exception hierarchy */
+
+.exception-hierarchy-content dd,
+.exception-hierarchy-content dl {
+  margin: 0px 2px;
+}
+
+.exception-hierarchy-content {
+  margin-left: 0.5em;
+}
+
+.exception-hierarchy-content ul {
+  list-style: '»' !important;
+}
+
+/* attribute tables */
+.py-attribute-table {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  margin: 0 2em;
+  padding-top: 16px;
+}
+
+.py-attribute-table-column {
+  flex: 1 1 auto;
+}
+
+.py-attribute-table-column:not(:first-child) {
+  margin-top: 1em;
+}
+
+.py-attribute-table-column > span {
+  font-weight: bold;
+  color: var(--color-header-text);
+}
+
+main .py-attribute-table-column > ul {
+  list-style: none;
+  margin: 4px 0px;
+  padding-left: 0;
+  font-size: 0.95em;
+}
+
+.py-attribute-table-entry {
+  margin: 0;
+  padding: 2px 0;
+  padding-left: 0.2em;
+  border-left: 2px solid var(--color-foreground-border);
+  display: flex;
+  line-height: 1.2em;
+}
+
+.py-attribute-table-entry > a {
+  padding-left: 0.5em;
+  color: var(--color-foreground-primary);
+  flex-grow: 1;
+}
+
+.py-attribute-table-entry > a:hover {
+  color: var(--color-brand-content);
+  text-decoration: none;
+}
+
+.py-attribute-table-entry:hover {
+  background-color: var(--color-background-hover);
+  border-left: 2px solid var(--color-brand-content);
+  text-decoration: none;
+}
+
+.py-attribute-table-badge {
+  flex-basis: 3em;
+  text-align: right;
+  font-size: 0.9em;
+  color: var(--color-foreground-muted);
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.versionmodified {
+  font-style: italic;
+}
+
+
+rect.highlighted {
+    fill: var(--highlighted-text);
+}
+
+
+.ethical-fixedfooter {
+  background-color: var(--rtd-ad-background) !important;
+  border-top: 1px solid var(--rtd-ad-border) !important;
+}
+
+.ethical-fixedfooter a {
+  color: var(--rtd-ad-main-text) !important;
+}
+
+.ethical-callout > small > em > a {
+  color: var(--rtd-ad-small-text) !important;
+}
+
+
+/*.active {
+  background-color: var(--mobile-active-toc);
+  border-left: 5px solid var(--mobile-active-toc);
+}*/
+
+div.code-block-caption {
+  font-size: medium;
+  font-weight: bold;
+}
+
+/* scroll to top button */
+
+#to-top {
+  position: fixed;
+  bottom: 50px;
+  right: 20px;
+
+  cursor: pointer;
+}
+
+#to-top.is-rtd {
+  bottom: 90px;
+}
+
+#to-top > span {
+  display: block;
+
+  width: auto;
+  height: 30px;
+  padding: 0 6px;
+
+  background-color: var(--color-background-secondary);
+  color: var(--color-foreground-secondary);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.2rem 0.5rem rgb(0 0 0 / 5%), 0 0 0.0625rem rgb(0 0 0 / 10%);
+}
+
+#to-top > span:hover {
+  background-color:  var(--color-background-hover);
+}
+
+#to-top span {
+  line-height: 30px;
+  font-size: 90%;
+  text-align: center;
+}
+
+.highlight {
+    border: 2px solid var(--color-background-border);
+}
+
+
+.admonition-supported-operations p.admonition-title {
+  font-weight:  700;
+}
+
+.admonition-supported-operations .describe dt:nth-child(2) code.sig-name{
+  color:  var(--color-foreground-primary);
+  font-weight: unset;
+  font-family:  unset;
+}
+
+
+/* RTD hacks */
+div.injected div.rst-versions {
+  background:  var(--color-background-secondary);
+  box-shadow: 0 0.2rem 0.5rem rgb(0 0 0 / 5%), 0 0 0.0625rem rgb(0 0 0 / 10%);
+}
+
+div.injected div.rst-versions div.rst-other-versions {
+  background: var(--color-background-primary);
+}
+
+div.injected div.rst-versions div.rst-other-versions #flyout-search-form input {
+  border: 2px solid var(--color-background-border);
+  border-radius: 0.25rem;
+}
+
+div.injected div.rst-versions div.rst-other-versions hr {
+  border-top: 2px solid var(--color-foreground-border);
+}
+
+div.injected div.rst-versions div.rst-other-versions dt {
+  color: var(--color-foreground-muted);
+}
+
+div.injected div.rst-versions div.rst-other-versions a {
+  color: var(--color-link)
+}
+
+div.injected div.rst-versions span.rst-current-version {
+  background-color:  var(--color-background-secondary);
+  color:  var(--color-api-name);
+}
+
+div.injected div.rst-versions span.rst-current-version:hover {
+  background-color:  var(--color-background-hover);
+}
+
+div.injected div.rst-versions span.rst-current-version .fa {
+  color:  var(--color-foreground-secondary);
+}

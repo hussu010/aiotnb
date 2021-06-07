@@ -13,9 +13,7 @@ with Path("aiotnb/__init__.py").open("r") as f:
     version = re.search(r"^__version__ = \"([^\"]+)\"", f.read(), re.M).group(1)
 
 requires_optional = {
-    "docs": [
-        "sphinx",
-    ]
+    "docs": ["sphinx>=3.5.4", "sphinxcontrib_trio>=1.1.2", "furo>=2021.4.11b34", "sphinx-copybutton>=0.3.1"]
 }
 
 setup(
@@ -24,7 +22,8 @@ setup(
     url="https://github.com/AnonymousDapper/aiotnb",
     project_urls={},
     version=version,
-    packages=[],
+    packages=["aiotnb"],
+    package_data={"aiotnb": ["py.typed"]},
     license="MIT",
     description="A coroutine-based client for the TNB Network API",
     long_description=readme,
