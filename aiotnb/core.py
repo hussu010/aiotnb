@@ -26,7 +26,7 @@ from .exceptions import (
     VerifyKeyLoadFailed,
 )
 from .http import HTTPClient, HTTPMethod, Route
-from .models import Bank, ConfirmationValidator, PrimaryValidator
+from .models import Bank, ConfirmationValidator, Validator
 
 if TYPE_CHECKING:
     from typing import Any, Union
@@ -109,7 +109,7 @@ async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: A
 
     Parameters
     ----------
-    bank_address: :class:`str`
+    cv_address: :class:`str`
         The IP address or hostname of the CV to connect to.
 
     use_https: Optional[:class:`bool`]
@@ -168,16 +168,16 @@ async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: A
     return ConfirmationValidator()
 
 
-async def connect_to_pv(pv_address: str, *, use_https: bool = False, **kwargs: Any) -> PrimaryValidator:
+async def connect_to_validator(validator_address: str, *, use_https: bool = False, **kwargs: Any) -> Validator:
     """
-    Initiates a connection to a primary validator in the TNB network and downloads its config data.
+    Initiates a connection to a validator in the TNB network and downloads its config data.
 
     The data is then parsed into an object to easily allow further requests.
 
     Parameters
     ----------
-    pv_address: :class:`str`
-        The IP address or hostname of the PV to connect to.
+    validator_address: :class:`str`
+        The IP address or hostname of the validator to connect to.
 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
@@ -199,7 +199,7 @@ async def connect_to_pv(pv_address: str, *, use_https: bool = False, **kwargs: A
     Raises
     ------
     :exc:`Forbidden`
-        The PV refused our config request.
+        The validator refused our config request.
         This should not happen.
 
     :exc:`NotFound`
@@ -207,19 +207,19 @@ async def connect_to_pv(pv_address: str, *, use_https: bool = False, **kwargs: A
         This should not happen.
 
     :exc:`NetworkServerError`
-        The PV encountered an error while attempting to give us the config.
+        The validator encountered an error while attempting to give us the config.
 
     :exc:`HTTPException`
-        The PV encountered an unknown error.
+        The validator encountered an unknown error.
 
 
     Returns
     -------
-    :class:`PrimaryValidator`
-        An object representing the PV at the specified address.
+    :class:`Validator`
+        An object representing the validator at the specified address.
     """
 
-    url_base = f"http{'s' if use_https else ''}://{pv_address}"
+    url_base = f"http{'s' if use_https else ''}://{validator_address}"
 
     connector = kwargs.get("connector")
     proxy = kwargs.get("proxy")
@@ -234,7 +234,7 @@ async def connect_to_pv(pv_address: str, *, use_https: bool = False, **kwargs: A
 
     data = await client.request(route)
 
-    return PrimaryValidator()
+    return Validator()
 
 
 class LocalAccount:

@@ -4,7 +4,7 @@ The MIT License (MIT)
 Copyright (c) 2021 AnonymousDapper
 """
 
-__all__ = ("Bank", "ConfirmationValidator", "PrimaryValidator")
+__all__ = ("Bank", "ConfirmationValidator", "Validator")
 
 
 class Bank:
@@ -25,9 +25,9 @@ class ConfirmationValidator:
     pass
 
 
-class PrimaryValidator:
+class Validator:
     """
-    Object representing a Primary Validator on the TNB network.
+    Object representing a Validator on the TNB network.
 
     """
 
