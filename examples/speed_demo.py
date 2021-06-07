@@ -6,6 +6,7 @@ import asyncio
 import time
 
 from tnb import banks, validators
+from yarl import URL
 
 import aiotnb
 from aiotnb import HTTPClient, HTTPMethod, Route
@@ -17,7 +18,7 @@ async def aiotnb_test():
     client = HTTPClient()
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/validators").resolve(f"http://{BANK_ADDRESS}")
+    route = Route(HTTPMethod.Get, "validators").resolve(URL(f"http://{BANK_ADDRESS}"))
     results = await client.request(route)
 
     node_list = []
