@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, cast
 from urllib.parse import quote as _quote
 
 from aiohttp import ClientSession
+from yarl import URL
 
 from .exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
 
@@ -29,8 +30,6 @@ except ImportError:
 if TYPE_CHECKING:
     from typing import Any, Mapping, Optional, Tuple, Union
     from asyncio import AbstractEventLoop
-
-    from yarl import URL
 
     from aiohttp import BasicAuth
     from aiohttp.connector import BaseConnector
@@ -56,17 +55,17 @@ class HTTPMethod(Enum):
 
 
 class Route:
-    def __init__(self, method: HTTPMethod, path: Union[str, URL], **params: Any):
+    def __init__(self, method: HTTPMethod, path: str, **params: Any):
         self.method = method
 
         if params is not None:
-            self.path = str(path).format_map({k: _quote(v) if isinstance(v, str) else v for k, v in params.items()})
+            self.path = path.format_map({k: _quote(v) if isinstance(v, str) else v for k, v in params.items()})
 
         else:
-            self.path = str(path)
+            self.path = path
 
-    def resolve(self, url_base: str) -> Tuple[str, str]:
-        return (self.method.value, f"{url_base}{self.path}")
+    def resolve(self, url_base: URL) -> Tuple[str, URL]:
+        return (self.method.value, url_base / self.path)
 
 
 class HTTPClient:
@@ -120,7 +119,7 @@ class HTTPClient:
         if self.__session:
             await self.__session.close()
 
-    async def request(self, route_data: Tuple[str, str], **kwargs: Any) -> Mapping[str, Any]:
+    async def request(self, route_data: Tuple[str, URL], **kwargs: Any) -> Mapping[str, Any]:
         headers = {"User-Agent": self.user_agent}
         method, url = route_data
 

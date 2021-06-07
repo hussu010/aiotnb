@@ -17,6 +17,7 @@ from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
 from nacl.exceptions import ValueError as NACLValueError
 from nacl.signing import SignedMessage, SigningKey, VerifyKey
+from yarl import URL
 
 from .exceptions import (
     KeyfileNotFound,
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 _log: logging.Logger = logging.getLogger(__name__)
 
 
-async def connect_to_bank(bank_address: str, *, use_https: bool = False, **kwargs: Any) -> Bank:
+async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool = False, **kwargs: Any) -> Bank:
     """
     Initiates a connection to a bank in the TNB network and downloads its config data.
 
@@ -44,6 +45,9 @@ async def connect_to_bank(bank_address: str, *, use_https: bool = False, **kwarg
     ----------
     bank_address: :class:`str`
         The IP address or hostname of the bank to connect to.
+
+    port: :class:`int`
+        The port to use to connect to the bank. Defaults to 80.
 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
@@ -83,7 +87,8 @@ async def connect_to_bank(bank_address: str, *, use_https: bool = False, **kwarg
         An object representing the bank at the specified address.
     """
 
-    url_base = f"http{'s' if use_https else ''}://{bank_address}"
+    # url_base = f"http{'s' if use_https else ''}://{bank_address}"
+    url_base = URL.build(scheme="https" if use_https else "http", host=bank_address, port=port)
 
     connector = kwargs.get("connector")
     proxy = kwargs.get("proxy")
@@ -101,7 +106,9 @@ async def connect_to_bank(bank_address: str, *, use_https: bool = False, **kwarg
     return Bank()
 
 
-async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: Any) -> ConfirmationValidator:
+async def connect_to_cv(
+    cv_address: str, *, port: int = 80, use_https: bool = False, **kwargs: Any
+) -> ConfirmationValidator:
     """
     Initiates a connection to a confirmation validator in the TNB network and downloads its config data.
 
@@ -111,6 +118,9 @@ async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: A
     ----------
     cv_address: :class:`str`
         The IP address or hostname of the CV to connect to.
+
+    port: :class:`int`
+        The port to use to connect to the CV. Defaults to 80.
 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
@@ -150,7 +160,8 @@ async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: A
         An object representing the CV at the specified address.
     """
 
-    url_base = f"http{'s' if use_https else ''}://{cv_address}"
+    # url_base = f"http{'s' if use_https else ''}://{cv_address}"
+    url_base = URL.build(scheme="https" if use_https else "http", host=cv_address, port=port)
 
     connector = kwargs.get("connector")
     proxy = kwargs.get("proxy")
@@ -168,7 +179,9 @@ async def connect_to_cv(cv_address: str, *, use_https: bool = False, **kwargs: A
     return ConfirmationValidator()
 
 
-async def connect_to_validator(validator_address: str, *, use_https: bool = False, **kwargs: Any) -> Validator:
+async def connect_to_validator(
+    validator_address: str, *, port: int = 80, use_https: bool = False, **kwargs: Any
+) -> Validator:
     """
     Initiates a connection to a validator in the TNB network and downloads its config data.
 
@@ -178,6 +191,9 @@ async def connect_to_validator(validator_address: str, *, use_https: bool = Fals
     ----------
     validator_address: :class:`str`
         The IP address or hostname of the validator to connect to.
+
+    port: :class:`int`
+        The port to use to connect to the validator. Defaults to 80.
 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
@@ -219,7 +235,8 @@ async def connect_to_validator(validator_address: str, *, use_https: bool = Fals
         An object representing the validator at the specified address.
     """
 
-    url_base = f"http{'s' if use_https else ''}://{validator_address}"
+    # url_base = f"http{'s' if use_https else ''}://{validator_address}"
+    url_base = URL.build(scheme="https" if use_https else "http", host=validator_address, port=port)
 
     connector = kwargs.get("connector")
     proxy = kwargs.get("proxy")
