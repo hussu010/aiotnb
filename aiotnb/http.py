@@ -47,11 +47,11 @@ if not _USING_FAST_JSON:
 
 
 class HTTPMethod(Enum):
-    Get = "GET"
-    Post = "POST"
-    Put = "PUT"
-    Patch = "PATCH"
-    Delete = "DELETE"
+    get = "GET"
+    post = "POST"
+    put = "PUT"
+    patch = "PATCH"
+    delete = "DELETE"
 
 
 class Route:

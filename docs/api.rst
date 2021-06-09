@@ -60,7 +60,7 @@ Keypair Account Management
 Verify a Keypair
 ~~~~~~~~~~~~~~~~~
 
-Check if a Keypair is valid
+Check if a keypair is valid
 
 .. autofunction:: is_valid_keypair
 
@@ -68,12 +68,44 @@ Check if a Keypair is valid
 Models
 -------
 
+Helpers
+~~~~~~~~
+
+.. class:: UrlProtocol
+    
+    Specifies the URL scheme to use for a given node connection.
+
+    .. attribute:: http
+
+        Use regular HTTP.
+
+    .. attribute:: https
+
+        Use secure HTTPS.
+
+
+.. class:: NodeType
+
+    Specifies the type of a given node.
+
+    .. attribute:: bank
+
+        Signifies a Bank node.
+
+    .. attribute:: primary_validator
+
+        Signifies a Validator node acting as a PV.
+
+    .. attribute:: confirmation_validator
+
+        Signifies a Validator node acting as a CV.
+
 Bank
 ~~~~~
 
 .. attributetable:: Bank
 
-.. autoclass:: Bank
+.. autoclass:: Bank()
     :members:
 
 Primary Validator
@@ -81,7 +113,7 @@ Primary Validator
 
 .. attributetable:: Validator
 
-.. autoclass:: Validator
+.. autoclass:: Validator()
     :members:
 
 Confirmation Validator
@@ -89,7 +121,7 @@ Confirmation Validator
 
 .. attributetable:: ConfirmationValidator
 
-.. autoclass:: ConfirmationValidator
+.. autoclass:: ConfirmationValidator()
     :members:
 
 

@@ -48,7 +48,7 @@ class HTTPException(TNBException):
 
     Attributes
     ----------
-    response: :class:`aiohttp.ClientResponse`
+    response: :class:`~aiohttp.ClientResponse`
         The response from the failed request.
 
     text: :class:`str`

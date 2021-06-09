@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from schema import SchemaError
+
 __all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
 import logging
@@ -24,10 +26,12 @@ from .exceptions import (
     KeysignException,
     SignatureVerifyFailed,
     SigningKeyLoadFailed,
+    ValidatorException,
     VerifyKeyLoadFailed,
 )
 from .http import HTTPClient, HTTPMethod, Route
 from .models import Bank, ConfirmationValidator, Validator
+from .validation import BankConfig
 
 if TYPE_CHECKING:
     from typing import Any, Union
@@ -52,17 +56,17 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
     Raises
@@ -99,11 +103,21 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
-    return Bank()
+    print(data)
+
+    try:
+        new_data = BankConfig.validate(data)
+
+    except SchemaError as e:
+        raise ValidatorException(data, e) from e
+
+    else:
+        print(new_data)
+        return Bank(client, **new_data)
 
 
 async def connect_to_cv(
@@ -125,17 +139,17 @@ async def connect_to_cv(
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
     Raises
@@ -172,7 +186,7 @@ async def connect_to_cv(
 
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
@@ -198,17 +212,17 @@ async def connect_to_validator(
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
 
@@ -247,7 +261,7 @@ async def connect_to_validator(
 
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
@@ -299,7 +313,7 @@ class LocalAccount:
 
         Parameters
         ----------
-        key_file: Union[:class:`pathlib.Path`, :class:`str`]
+        key_file: Union[:class:`~pathlib.Path`, :class:`str`]
             The file path to load a keyfile from.
 
         Raises
@@ -353,7 +367,7 @@ class LocalAccount:
 
         Parameters
         ----------
-        key_file_path: Union[:class:`pathlib.Path`, :class:`str`]
+        key_file_path: Union[:class:`~pathlib.Path`, :class:`str`]
             The file path to save the key to.
 
         Raises
@@ -391,7 +405,7 @@ class LocalAccount:
 
         Returns
         -------
-        :class:`nacl.signing.SignedMessage`
+        :class:`~nacl.signing.SignedMessage`
             The signature data.
 
         """
@@ -405,10 +419,10 @@ class LocalAccount:
 
         Parameters
         ----------
-        message: :class:`nacl.signing.SignedMessage`
+        message: :class:`~nacl.signing.SignedMessage`
             The signed message + signature data.
 
-        verify_key: :class:`nacl.signing.VerifyKey`
+        verify_key: :class:`~nacl.signing.VerifyKey`
             The sender's public key data.
 
         Raises

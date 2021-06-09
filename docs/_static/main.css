@@ -339,14 +339,14 @@ main .py-attribute-table-column > ul {
   margin: 0;
   padding: 2px 0;
   padding-left: 0.2em;
-  border-left: 2px solid var(--color-foreground-border);
+  border-left: 2px solid var(--color-background-border);
   display: flex;
   line-height: 1.2em;
 }
 
 .py-attribute-table-entry > a {
   padding-left: 0.5em;
-  color: var(--color-foreground-primary);
+  color: var(--color-foreground-secondary);
   flex-grow: 1;
 }
 
@@ -365,7 +365,7 @@ main .py-attribute-table-column > ul {
   flex-basis: 3em;
   text-align: right;
   font-size: 0.9em;
-  color: var(--color-foreground-muted);
+  color: var(--color-api-keyword);
   -moz-user-select: none;
   -webkit-user-select: none;
   user-select: none;
@@ -496,4 +496,8 @@ div.injected div.rst-versions span.rst-current-version:hover {
 
 div.injected div.rst-versions span.rst-current-version .fa {
   color:  var(--color-foreground-secondary);
+}
+
+code.literal {
+  background: transparent;
 }

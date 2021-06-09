@@ -9,13 +9,14 @@ from __future__ import annotations
 __all__ = ("AccountNumber", "BalanceLock", "ISO8601UTCTimestamp", "OptionalVal", "partial", "Signature", "Url")
 
 import datetime
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
 from schema import And, Or, Schema, Use
 from yarl import URL
+
+from ..models import NodeType, UrlProtocol
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional, TypeVar
@@ -50,17 +51,6 @@ def _to_bytes(data: str, *, exact_len: Optional[int]) -> bytes:
         raise ValueError(f"value should be {exact_len} bytes")
 
     return data.encode("utf-8")
-
-
-class UrlProtocol(Enum):
-    Http = "http"
-    Https = "https"
-
-
-class NodeType(Enum):
-    Bank = "BANK"
-    PrimaryValidator = "PRIMARY_VALIDATOR"
-    Validator = "CONFIRMATION_VALIDATOR"
 
 
 # Schema models start here
