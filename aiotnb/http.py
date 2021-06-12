@@ -39,7 +39,7 @@ from . import __version__
 
 __all__ = ("Route", "HTTPMethod", "HTTPClient")
 
-_log: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 if not _USING_FAST_JSON:

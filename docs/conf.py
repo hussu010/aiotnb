@@ -58,6 +58,7 @@ intersphinx_mapping = {
     "py": ("https://docs.python.org/3", None),
     "aio": ("https://docs.aiohttp.org/en/stable/", None),
     "pynacl": ("https://pynacl.readthedocs.io/en/latest", None),
+    "yarl": ("https://yarl.readthedocs.io/en/latest/", None),
 }
 
 rst_prolog = """

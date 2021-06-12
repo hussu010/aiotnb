@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from schema import SchemaError
-
 __all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
 import logging
@@ -31,12 +29,12 @@ from .exceptions import (
 )
 from .http import HTTPClient, HTTPMethod, Route
 from .models import Bank, ConfirmationValidator, Validator
-from .validation import BankConfig
+from .validation import BankConfig, transform
 
 if TYPE_CHECKING:
     from typing import Any, Union
 
-_log: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool = False, **kwargs: Any) -> Bank:
@@ -107,17 +105,9 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     data = await client.request(route)
 
-    print(data)
+    new_data = transform(BankConfig, data)
 
-    try:
-        new_data = BankConfig.validate(data)
-
-    except SchemaError as e:
-        raise ValidatorException(data, e) from e
-
-    else:
-        print(new_data)
-        return Bank(client, **new_data)
+    return Bank(client, **new_data)
 
 
 async def connect_to_cv(

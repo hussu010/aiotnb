@@ -22,7 +22,7 @@ setup(
     url="https://github.com/AnonymousDapper/aiotnb",
     project_urls={},
     version=version,
-    packages=["aiotnb"],
+    packages=["aiotnb", "aiotnb.models", "aiotnb.validation"],
     package_data={"aiotnb": ["py.typed"]},
     license="MIT",
     description="A coroutine-based client for the TNB Network API",
