@@ -6,6 +6,8 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+__all__ = ("Route", "HTTPMethod", "HTTPClient")
+
 import asyncio
 import logging
 import sys
@@ -16,7 +18,7 @@ from urllib.parse import quote as _quote
 from aiohttp import ClientSession
 from yarl import URL
 
-from .exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
+from .errors import Forbidden, HTTPException, NetworkServerError, NotFound
 
 try:
     import ujson as json
@@ -36,8 +38,6 @@ if TYPE_CHECKING:
     from aiohttp.client_reqrep import ClientResponse
 
 from . import __version__
-
-__all__ = ("Route", "HTTPMethod", "HTTPClient")
 
 _log = logging.getLogger(__name__)
 

@@ -8,16 +8,10 @@ from datetime import datetime, timezone
 
 import pytest
 from nacl.signing import VerifyKey
-from schema import And, Optional, Schema, Use
 from yarl import URL
 
-from aiotnb.validation import (
-    AccountNumber,
-    ISO8601UTCTimestamp,
-    OptionalVal,
-    Url,
-    validate_with,
-)
+from aiotnb.schemas import AccountNumber, Timestamp, Url
+from aiotnb.validation import As, Maybe, Schema, validate_with
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,7 +27,7 @@ async def test_unchanged():
     assert result == {}
 
 
-@validate_with(Schema({"timestamp": ISO8601UTCTimestamp}))
+@validate_with(Schema({"timestamp": Timestamp}))
 async def timestamp_data(stamp: str):
     return {"timestamp": stamp}
 
@@ -47,15 +41,15 @@ async def test_iso_timestamp():
 complex_schema = Schema(
     {
         "count": int,
-        "next": OptionalVal(Url),
-        "previous": OptionalVal(Url),
+        "next": Maybe(Url),
+        "previous": Maybe(Url),
         "results": [
             {
                 "id": str,
-                "created_date": ISO8601UTCTimestamp,
-                "modified_date": ISO8601UTCTimestamp,
+                "created_date": Timestamp,
+                "modified_date": Timestamp,
                 "account_number": AccountNumber,
-                "trust": And(str, Use(float)),
+                "trust": As(str, float),
             }
         ],
     }

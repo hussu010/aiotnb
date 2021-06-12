@@ -68,8 +68,57 @@ Check if a keypair is valid
 Models
 -------
 
-Helpers
-~~~~~~~~
+Bank
+~~~~~
+
+.. attributetable:: Bank
+
+.. autoclass:: Bank()
+    :members:
+
+Primary Validator
+~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: Validator
+
+.. autoclass:: Validator()
+    :members:
+
+Confirmation Validator
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationValidator
+
+.. autoclass:: ConfirmationValidator()
+    :members:
+
+
+Common
+~~~~~~~
+
+Paginated Responses
+********************
+
+Some API endpoints return just one page of possible data. In aiotnb, these methods return an async iterator over the pages of data.
+
+.. attributetable:: PaginatedResponse
+
+.. autoclass:: PaginatedResponse()
+    :members:
+
+
+
+Account
+********
+
+.. attributetable:: Account
+
+.. autoclass:: Account()
+    :members:
+
+
+Enumerations
+-------------
 
 .. class:: UrlProtocol
     
@@ -100,29 +149,50 @@ Helpers
 
         Signifies a Validator node acting as a CV.
 
-Bank
-~~~~~
 
-.. attributetable:: Bank
+.. class:: AccountOrder
 
-.. autoclass:: Bank()
-    :members:
+    Specifies results ordering for an accounts endpoint request.
 
-Primary Validator
-~~~~~~~~~~~~~~~~~~
+    .. attribute:: created_asc
 
-.. attributetable:: Validator
+        Sort accounts by created dated.
 
-.. autoclass:: Validator()
-    :members:
+    .. attribute:: created_desc
 
-Confirmation Validator
-~~~~~~~~~~~~~~~~~~~~~~~
+        Sort accounts by created date, descending.
 
-.. attributetable:: ConfirmationValidator
+    .. attribute:: modified_asc
 
-.. autoclass:: ConfirmationValidator()
-    :members:
+        Sort accounts by modified date.
+
+    .. attribute:: modified_desc
+
+        Sort accounts by modified date, descending.
+
+    .. attribute:: id_asc
+
+        Sort accounts by account ID.
+
+    .. attribute:: id_desc
+
+        Sort accounts by account ID, descending.
+
+    .. attribute:: number_asc
+
+        Sort accounts by account number.
+
+    .. attribute:: number_desc
+
+        Sort accounts by account_number, descending.
+
+    .. attribute:: trust_asc
+
+        Sort accounts by trust.
+
+    .. attribute:: trust_desc
+
+        Sort accounts by trust, descending.
 
 
 

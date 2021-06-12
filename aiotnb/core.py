@@ -6,12 +6,11 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 __all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv", "LocalAccount", "is_valid_keypair")
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
@@ -19,7 +18,9 @@ from nacl.exceptions import ValueError as NACLValueError
 from nacl.signing import SignedMessage, SigningKey, VerifyKey
 from yarl import URL
 
-from .exceptions import (
+from .bank import Bank
+from .confirmation_validator import ConfirmationValidator
+from .errors import (
     KeyfileNotFound,
     KeysignException,
     SignatureVerifyFailed,
@@ -28,8 +29,9 @@ from .exceptions import (
     VerifyKeyLoadFailed,
 )
 from .http import HTTPClient, HTTPMethod, Route
-from .models import Bank, ConfirmationValidator, Validator
-from .validation import BankConfig, transform
+from .schemas import BankConfig
+from .validation import transform
+from .validator import Validator
 
 if TYPE_CHECKING:
     from typing import Any, Union

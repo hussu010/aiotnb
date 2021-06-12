@@ -6,18 +6,49 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Validator", "Ignore", "Const", "Fn", "Type", "Maybe", "As", "Schema")
+__all__ = ("transform", "validate_with", "Validator", "Ignore", "Const", "Fn", "Type", "Maybe", "As", "Schema")
 
 import logging
+from functools import wraps
 from typing import TYPE_CHECKING
 
-from ..exceptions import ValidatorException, ValidatorTransformError
+from .errors import ValidatorException, ValidatorFailed, ValidatorTransformError
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Awaitable, Callable, Mapping, TypeVar
+
+    from typing_extensions import ParamSpec
+
+    _A = ParamSpec("_A")
+    _M = TypeVar("_M", bound=Mapping[str, Any])
 
 
 _log = logging.getLogger(__name__)
+
+
+def transform(schema: Validator, data: Any) -> Any:
+    is_ok = schema.validate(data)
+
+    if not is_ok:
+        raise ValidatorFailed(f"Had schema: {schema!r}\nHad data: {data!r}")
+
+    return schema.transform(data)
+
+
+def validate_with(schema: Validator):
+    def deco(fn: Callable[_A, Awaitable[_M]]) -> Callable[_A, Awaitable[Any]]:
+        @wraps(fn)
+        async def inner(*args: _A.args, **kwargs: _A.kwargs) -> Any:
+            result = await fn(*args, **kwargs)
+
+            return transform(schema, result)
+
+        return inner
+
+    return deco
+
+
+# Actual validator logic
 
 
 class ArgsManager:
@@ -181,7 +212,7 @@ class As(Validator):
         self.transformer = transformer
         self._transformer_name = transformer.__name__ if hasattr(transformer, "__name__") else repr(transformer)
 
-        self.call_filter = kwargs.pop("filter", None)
+        self.unpack_params = kwargs.pop("unpack_args", False)
 
         super().__init__(Schema(validator).resolve(), *args, **kwargs)
 
@@ -190,6 +221,7 @@ class As(Validator):
 
     def transform(self, data: Any) -> Any:
         new_data = self.validator.transform(data)
+        result = None
 
         if ArgsManager.has_type(self.transformer):
             args, kwargs = ArgsManager.get_args(self.transformer)
@@ -199,22 +231,30 @@ class As(Validator):
 
         try:
             if callable(self.transformer):
-                if self.call_filter:
-                    result = self.call_filter(self.transformer, new_data, *args, **kwargs)
+                if self.unpack_params:
+                    type_ = _priority(data)
+                    if type_ == DICT:
+                        result = self.transformer(*args, **new_data, **kwargs)
+                    elif type_ == ITER:
+                        result = self.transformer(*new_data, *args, **kwargs)
 
-                else:
+                if not result:
                     result = self.transformer(new_data, *args, **kwargs)
 
             elif hasattr(self.transformer, "transform"):
-                if self.call_filter:
-                    result = self.call_filter(self.transformer.transform, new_data, *args, **kwargs)
+                if self.unpack_params:
+                    type_ = _priority(data)
+                    if type_ == DICT:
+                        result = self.transformer.transform(*args, **new_data, **kwargs)
+                    elif type_ == ITER:
+                        result = self.transformer.transform(*new_data, *args, **kwargs)
 
-                else:
+                if not result:
                     result = self.transformer.transform(new_data, *args, **kwargs)
 
             else:
                 raise ValidatorTransformError(
-                    f"transformer {self._transformer_name} has no candidate for conversion (is not callable, has no transform method"
+                    f"transformer {self._transformer_name} has no candidate for conversion (is not callable, has no transform method)"
                 )
 
             return result

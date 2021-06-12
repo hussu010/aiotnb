@@ -7,7 +7,7 @@ Copyright (c) 2021 AnonymousDapper
 import pytest
 from yarl import URL
 
-from aiotnb.exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
+from aiotnb.errors import Forbidden, HTTPException, NetworkServerError, NotFound
 from aiotnb.http import HTTPClient, HTTPMethod, Route
 
 pytestmark = pytest.mark.asyncio
