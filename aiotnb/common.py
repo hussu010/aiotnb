@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Account", "PaginatedResponse")
+__all__ = ("Account", "PaginatedResponse", "Block", "BankTransaction")
 
 import logging
 from enum import Enum
@@ -19,7 +19,6 @@ from yarl import URL
 from . import validation
 from .errors import IteratorEmpty
 from .http import HTTPClient
-from .schemas import PAGINATOR_BASE
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -46,13 +45,16 @@ class Account:
     modified_date: :class:`~datetime.datetime`
         Date the account last was modified. This includes balance changes, etc. (TODO)
 
-    account_number: :class:`bytes`
-        The public key for the account as hex-encoded bytes.
+    account_number: :class:`str`
+        This account's unique address. Also its public key.
+
+    account_number_bytes: :class:`bytes`
+        This account's number as hex-encoded bytes.
 
     trust: :class:`float`
         The trust amount assigned to this account by a given Bank. Can be different across banks.
 
-    bank_id: :class:`bytes`
+    bank_id: :class:`str`
         The node identifier (NID) of the Bank the account was received from. This is only useful when looking at account trust.
     """
 
@@ -64,7 +66,7 @@ class Account:
         modified_date: datetime,
         account_number: VerifyKey,
         trust: float,
-        bank_id: bytes,
+        bank_id: str,
     ):
         self.id = id
         self.created_date = created_date
@@ -72,14 +74,133 @@ class Account:
         self.trust = trust
         self.bank_id = bank_id
 
-        self.account_number = account_number.encode(encoder=HexEncoder)
+        self.account_number_bytes = account_number.encode(encoder=HexEncoder)
+        self.account_number = self.account_number_bytes.decode("utf-8")
         self._public_key = account_number
 
     def __repr__(self):
-        return f"Account({self.account_number.decode(encoding='utf-8')} [{self.bank_id.decode(encoding='utf-8')}])"
+        return f"<Account({self.account_number})>"
+
+
+class Block:
+    """
+    Represents a transaction block on the TNB network.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The block ID on the network.
+
+    created_date: :class:`~datetime.datetime`
+        Date when the block was created.
+
+    modified_date: :class:`~datetime.datetime`
+        Date when the block was last modified.
+
+    balance_key: :class:`str`
+        Balance key for this block.
+
+    balance_key_bytes: :class:`bytes`
+        Balance key for this block as hex-encoded bytes.
+
+    sender: :class:`str`
+        Sender's account number.
+
+    sender_bytes: :class:`bytes`
+        The sender's account number as hex-encoded bytes.
+
+    signature: :class:`bytes`
+        Signature for this block as hex-encoded bytes.
+    """
+
+    __slots__ = (
+        "id",
+        "created_date",
+        "modified_date",
+        "balance_key",
+        "balance_key_bytes",
+        "sender",
+        "sender_bytes",
+        "signature",
+        "_balance_key",
+        "_sender_key",
+    )
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        balance_key: VerifyKey,
+        sender: VerifyKey,
+        signature: bytes,
+    ):
+        self.id = id
+        self.created_date = created_date
+        self.modified = modified_date
+        self.signature = signature
+
+        self.balance_key_bytes = balance_key.encode(encoder=HexEncoder)
+        self.balance_key = self.balance_key_bytes.decode("utf-8")
+
+        self.sender_bytes = sender.encode(encoder=HexEncoder)
+        self.sender = self.sender_bytes.decode("utf-8")
+
+        self._balance_key = balance_key
+        self._sender_key = sender
+
+    def __repr__(self):
+        return f"<Block(id={self.id})>"
+
+
+class BankTransaction:
+    """
+    Represents a bank transaction on the TNB network.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The transaction ID on the network.
+
+    block: :class:`.Block`
+        Network Block this transaction is a part of.
+
+    amount: :class:`int`
+        Amount of TNBC involved in this transaction.
+
+    recipient: :class:`str`
+        Recipient's account number.
+
+    recipient_bytes: :class:`bytes`
+        Recipient's account number as hex-encoded bytes.
+    """
+
+    __slots__ = ("id", "block", "amount", "recipient", "recipient_bytes", "_recipient_key")
+
+    def __init__(self, *, id: str, block: Block, amount: int, recipient: VerifyKey):
+        self.id = id
+        self.block = block
+        self.amount = amount
+
+        self.recipient_bytes = recipient.encode(encoder=HexEncoder)
+        self.recipient = self.recipient_bytes.decode("utf-8")
+
+        self._recipient_key = recipient
+
+    def __repr__(self):
+        return f"<BankTransaction(id={self.id})>"
 
 
 T = TypeVar("T")
+Url = validation.As(str, URL)
+
+PAGINATOR_BASE = {
+    "count": int,
+    "next": validation.Maybe(Url),
+    "previous": validation.Maybe(Url),
+    "results": None,
+}
 
 
 class PaginatedResponse(AsyncIterator[T]):
@@ -93,9 +214,7 @@ class PaginatedResponse(AsyncIterator[T]):
 
     """
 
-    def __init__(
-        self, _client: HTTPClient, result_schema: Mapping[str, Any], type_: T, url: URL, *args: Any, **kwargs: Any
-    ):
+    def __init__(self, _client: HTTPClient, result_schema: Any, type_: T, url: URL, *args: Any, **kwargs: Any):
         self._client = _client
         self.result_type = type_
 
@@ -109,7 +228,7 @@ class PaginatedResponse(AsyncIterator[T]):
         self._validator_args = kwargs.pop("validator_args", {})
 
         schema = PAGINATOR_BASE
-        schema["results"] = [validation.As(result_schema, type_, **kwargs.pop("response_as_args", {}))]
+        schema["results"] = [result_schema]
 
         self.schema = validation.Schema(schema).resolve()
 

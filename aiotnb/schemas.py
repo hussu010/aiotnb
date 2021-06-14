@@ -9,12 +9,14 @@ from __future__ import annotations
 __all__ = (
     "partial",
     "Key",
-    "AccountNumber",
+    "PublicKey",
     "BalanceLock",
     "Timestamp",
     "Signature",
     "Url",
     "BankConfig",
+    "BlockSchema",
+    "BankTransactionSchema",
     "AccountSchema",
 )
 
@@ -25,6 +27,7 @@ from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
 from yarl import URL
 
+from .common import Account, BankTransaction, Block
 from .enums import NodeType, UrlProtocol
 from .validation import As, Const, Fn, Ignore, Maybe, Schema, Type
 
@@ -67,7 +70,7 @@ def _to_bytes(data: str, *, exact_len: Optional[int]) -> bytes:
 
 Key = partial(As, str)
 
-AccountNumber = Key(_key_from_str)
+PublicKey = Key(_key_from_str)
 
 BalanceLock = Key(_to_bytes)
 
@@ -83,9 +86,9 @@ Url = Key(URL)
 BankConfig = Schema(
     {
         "primary_validator": dict,
-        "account_number": AccountNumber,
+        "account_number": PublicKey,
         "ip_address": Url,
-        "node_identifier": AccountNumber,
+        "node_identifier": PublicKey,
         "port": Maybe(int),
         "protocol": Key(UrlProtocol),
         "version": str,
@@ -94,21 +97,28 @@ BankConfig = Schema(
     }
 )
 
+BlockSchema = As(
+    {
+        "id": str,
+        "created_date": Timestamp,
+        "modified_date": Timestamp,
+        "balance_key": PublicKey,
+        "sender": PublicKey,
+        "signature": Signature,
+    },
+    Block,
+)
 
-AccountSchema = {
-    "id": str,
-    "created_date": Timestamp,
-    "modified_date": Timestamp,
-    "account_number": AccountNumber,
-    "trust": Key(float),
-}
+BankTransactionSchema = As({"id": str, "block": BlockSchema, "amount": int, "recipient": PublicKey}, BankTransaction)
 
 
-# Helpers
-
-PAGINATOR_BASE = {
-    "count": int,
-    "next": Maybe(Url),
-    "previous": Maybe(Url),
-    "results": None,
-}
+AccountSchema = As(
+    {
+        "id": str,
+        "created_date": Timestamp,
+        "modified_date": Timestamp,
+        "account_number": PublicKey,
+        "trust": Key(float),
+    },
+    Account,
+)

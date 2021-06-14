@@ -36,4 +36,5 @@ from .confirmation_validator import *
 from .core import *
 from .enums import *
 from .errors import *
+from .keypair import *
 from .validator import *

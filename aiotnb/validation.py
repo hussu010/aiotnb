@@ -53,7 +53,7 @@ def validate_with(schema: Validator):
 
 class ArgsManager:
     types = {}
-    tmp = None
+    tmp = []
 
     @classmethod
     def register_type(cls, type_, *args, **kwargs):
@@ -73,7 +73,7 @@ class ArgsManager:
 
     @classmethod
     def temp(cls, type_, *args, **kwargs):
-        cls.tmp = type_
+        cls.tmp.append(type_)
         cls.register_type(type_, *args, **kwargs)
 
         return cls()
@@ -85,8 +85,8 @@ class ArgsManager:
     # @classmethod
     def __exit__(self, *args):
         cls = self.__class__
-        cls.clear_type(cls.tmp)
-        cls.tmp = None
+        tmp = cls.tmp.pop()
+        cls.clear_type(tmp)
 
 
 class Validator:
@@ -212,7 +212,7 @@ class As(Validator):
         self.transformer = transformer
         self._transformer_name = transformer.__name__ if hasattr(transformer, "__name__") else repr(transformer)
 
-        self.unpack_params = kwargs.pop("unpack_args", False)
+        self.unpack_params = kwargs.pop("unpack_args", True)
 
         super().__init__(Schema(validator).resolve(), *args, **kwargs)
 

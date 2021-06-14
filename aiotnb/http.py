@@ -110,7 +110,7 @@ class HTTPClient:
 
     async def init_session(self):
         if not self.__session:
-            self.__session = ClientSession(connector=self.connector)
+            self.__session = ClientSession(connector=self.connector, json_serialize=json.dumps)
 
         else:
             _log.warn("init_session called with existing session")
