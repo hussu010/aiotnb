@@ -15,7 +15,7 @@ from aiotnb.core import LocalAccount, is_valid_keypair
 keypair_1 = LocalAccount.generate()
 keypair_2 = LocalAccount.generate()
 
-MESSAGE = b"THIS IS-A TEST[!@]"
+MESSAGE = "THIS IS-A TEST[!@]"
 stored_message = None
 
 
@@ -47,24 +47,9 @@ def test_write_raw(tmp_path):
     assert data == keypair_2.signing_key
 
 
-@pytest.mark.order(before="test_sign_load")
-def test_sign_store():
-    global stored_message
-
-    stored_message = keypair_1.sign_message(MESSAGE)
-
-    assert stored_message.message == HexEncoder.encode(MESSAGE)
-
-
-def test_sign_load():
-    message = keypair_2.verify(cast(SignedMessage, stored_message), keypair_1._verify_key)
-
-    assert message == MESSAGE
-
-
-@pytest.mark.order(after="test_sign_load")
-def test_sign_load_raw():
-    message = keypair_2.verify_raw(HexEncoder.encode(MESSAGE), stored_message.signature, keypair_1.account_number)
+def test_sign():
+    signature = keypair_2.sign_message(MESSAGE)
+    message = keypair_2.verify(MESSAGE, signature, keypair_2.account_number)
 
     assert message == MESSAGE
 

@@ -25,7 +25,6 @@ from .errors import (
     KeysignException,
     SignatureVerifyFailed,
     SigningKeyLoadFailed,
-    ValidatorException,
     VerifyKeyLoadFailed,
 )
 from .http import HTTPClient, HTTPMethod, Route
@@ -282,7 +281,7 @@ class LocalAccount:
         .. caution:: Do not share this key. This is the private key and can be used to impersonate you.
     """
 
-    def __init__(self, private_key: SigningKey):
+    def __init__(self, signing_key: str):
         """
         Create a new local account object from an existing private key.
 
@@ -290,12 +289,21 @@ class LocalAccount:
         ----------
         sign_key: :class:`nacl.signing.SigningKey`
             The private key for the keypair. The verify key will be derived from the private key.
+
+        Raises
+        ------
+        :exc:`SigningKeyLoadFailed`
+            The signing_key was not valid.
         """
+        try:
+            self._sign_key = SigningKey(signing_key, encoder=HexEncoder)
+        except Exception as e:
+            _log.error("signing key load failed")
+            raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
 
-        self._sign_key = private_key
-        self._verify_key = private_key.verify_key
+        self._verify_key = self._sign_key.verify_key
 
-        self.signing_key = private_key.encode(encoder=HexEncoder)
+        self.signing_key = self._sign_key.encode(encoder=HexEncoder)
         self.account_number = self._verify_key.encode(encoder=HexEncoder)
 
     @classmethod
@@ -334,16 +342,7 @@ class LocalAccount:
             _log.error("keyfile path was not found")
             raise KeyfileNotFound(f"'{file_path.name}' was not found on the system")
 
-        signing_key: SigningKey
-
-        try:
-            signing_key = SigningKey(raw_key, encoder=HexEncoder)
-
-        except Exception as e:
-            _log.error("private key load failed")
-            raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
-
-        return cls(signing_key)
+        return cls(raw_key)
 
     @classmethod
     def generate(cls) -> LocalAccount:
@@ -351,7 +350,7 @@ class LocalAccount:
         Generates a new keypair and load an account from it.
         """
 
-        return cls(SigningKey.generate())
+        return cls(SigningKey.generate().encode(encoder=HexEncoder))
 
     def write_key_file(self, key_file: Union[Path, str]):
         """
@@ -386,35 +385,38 @@ class LocalAccount:
             _log.error("keyfile already exists, not overwriting.")
             raise KeyfileNotFound(f"'{file_path.name}' already exists")
 
-    def sign_message(self, message: bytes) -> SignedMessage:
+    def sign_message(self, message: str) -> str:
         """
         Signs a given message and returns the signature as hex-encoded bytes.
 
         Parameters
         ----------
-        message: :class:`bytes`
+        message: :class:`str`
             The message data to sign.
 
         Returns
         -------
-        :class:`~nacl.signing.SignedMessage`
+        :class:`str`
             The signature data.
 
         """
 
-        return self._sign_key.sign(message, encoder=HexEncoder)
+        return self._sign_key.sign(bytes(message, "utf-8")).signature.hex()
 
     @staticmethod
-    def verify(signed_message: SignedMessage, verify_key: VerifyKey) -> bytes:
+    def verify(message: str, signature: str, account_number: str) -> str:
         """
         Takes a signed message, a signature, and a public key, and attempts to verify the signature on the message.
 
         Parameters
         ----------
-        message: :class:`~nacl.signing.SignedMessage`
-            The signed message + signature data.
+        message: :class:`str`
+            The message data.
 
-        verify_key: :class:`~nacl.signing.VerifyKey`
+        signature: :class:`str`
+            The signature data
+
+        account_number: :class:`str`
             The sender's public key data.
 
         Raises
@@ -425,65 +427,22 @@ class LocalAccount:
 
         Returns
         -------
-        :class:`bytes`
+        :class:`str`
             The verified message data
         """
         try:
-            verified_message = verify_key.verify(signed_message, encoder=HexEncoder)
+            verify_key = VerifyKey(account_number, encoder=HexEncoder)
+        except Exception as e:
+            _log.error("account number load failed")
+            raise VerifyKeyLoadFailed("key must be 64 bytes long and hex-encoded", original=e) from e
+        try:
+            verified_message = verify_key.verify(bytes(message, "utf-8"), bytes.fromhex(signature))
 
         except BadSignatureError as e:
             _log.error("verify: signature failed")
             raise SignatureVerifyFailed("verify signature bad", original=e) from e
 
-        return verified_message
-
-    @staticmethod
-    def verify_raw(message: bytes, signature: bytes, verify_key: bytes) -> bytes:
-        """
-        Takes a signed message, a signature, and a public key, and attempts to verify the signature on the message.
-
-        Parameters
-        ----------
-        message: :class:`bytes`
-            The signed message data to validate.
-
-        signature: :class:`bytes`
-            The signature data attached to the message.
-
-        verify_key: :class:`bytes`
-            The sender's public key data.
-
-        Raises
-        ------
-        :exc:`VerifyKeyLoadFailed`
-            The given public key data was not a valid key.
-
-        :exc:`SignatureVerifyFailed`
-            The signature did not match the public key.
-
-        Returns
-        -------
-        :class:`bytes`
-            The verified message data
-        """
-
-        try:
-            vk = VerifyKey(verify_key, encoder=HexEncoder)
-            verified_message = vk.verify(message, HexEncoder.decode(signature), encoder=HexEncoder)
-
-        except NACLValueError as e:
-            _log.error("verify_raw: public key failed")
-            raise VerifyKeyLoadFailed("verify_raw invalid key", original=e) from e
-
-        except BadSignatureError as e:
-            _log.error("verify_raw: signature failed")
-            raise SignatureVerifyFailed("verify_raw signature bad", original=e) from e
-
-        except Exception as e:
-            _log.error("verify_raw: other error")
-            raise KeysignException("other error, probably bad signature", original=e) from e
-
-        return verified_message
+        return verified_message.decode("utf-8")
 
     def __eq__(self, other: object):
         if not isinstance(other, LocalAccount):
