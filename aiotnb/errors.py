@@ -10,6 +10,7 @@ __all__ = (
     "TNBException",
     "IteratorEmpty",
     "HTTPException",
+    "Unauthorized",
     "Forbidden",
     "NotFound",
     "NetworkServerError",
@@ -73,6 +74,14 @@ class HTTPException(TNBException):
         self.message = message
 
         super().__init__(f"{response.status} {response.reason}: {message}")
+
+
+class Unauthorized(HTTPException):
+    """
+    Represents an HTTP 401 response.
+    """
+
+    pass
 
 
 class Forbidden(HTTPException):

@@ -17,12 +17,13 @@ from nacl.signing import VerifyKey
 from yarl import URL
 
 from . import validation
+from .enums import NodeType
 from .errors import IteratorEmpty
 from .http import HTTPClient
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from typing import Any, List, Mapping
+    from typing import Any, List, Mapping, Type
 
 
 _log = logging.getLogger(__name__)
@@ -39,10 +40,10 @@ class Account:
     id: :class:`str`
         A unique identifier representing this account across the network.
 
-    created_date: :class:`~datetime.datetime`
+    created: :class:`~datetime.datetime`
         Date the account was first seen on the network.
 
-    modified_date: :class:`~datetime.datetime`
+    modified: :class:`~datetime.datetime`
         Date the account last was modified. This includes balance changes, etc. (TODO)
 
     account_number: :class:`str`
@@ -55,7 +56,7 @@ class Account:
         The trust amount assigned to this account by a given Bank. Can be different across banks.
 
     bank_id: :class:`str`
-        The node identifier (NID) of the Bank the account was received from. This is only useful when looking at account trust.
+        The node identifier (NID) of the bank this account was received from. This is only useful when looking at account trust.
     """
 
     def __init__(
@@ -69,8 +70,8 @@ class Account:
         bank_id: str,
     ):
         self.id = id
-        self.created_date = created_date
-        self.modified_date = modified_date
+        self.created = created_date
+        self.modified = modified_date
         self.trust = trust
         self.bank_id = bank_id
 
@@ -91,10 +92,10 @@ class Block:
     id: :class:`str`
         The block ID on the network.
 
-    created_date: :class:`~datetime.datetime`
+    created: :class:`~datetime.datetime`
         Date when the block was created.
 
-    modified_date: :class:`~datetime.datetime`
+    modified: :class:`~datetime.datetime`
         Date when the block was last modified.
 
     balance_key: :class:`str`
@@ -115,8 +116,8 @@ class Block:
 
     __slots__ = (
         "id",
-        "created_date",
-        "modified_date",
+        "created",
+        "modified",
         "balance_key",
         "balance_key_bytes",
         "sender",
@@ -137,7 +138,7 @@ class Block:
         signature: bytes,
     ):
         self.id = id
-        self.created_date = created_date
+        self.created = created_date
         self.modified = modified_date
         self.signature = signature
 
@@ -169,24 +170,49 @@ class BankTransaction:
     amount: :class:`int`
         Amount of TNBC involved in this transaction.
 
+    fee_paid_to: :class:`.NodeType`
+        Indicates what node type received this fee payment. If this is ``NodeType.none``, then the transaction is not a fee payment.
+
+    memo: :class:`str`
+        Memo text sent with the transaction.
+
     recipient: :class:`str`
         Recipient's account number.
 
     recipient_bytes: :class:`bytes`
         Recipient's account number as hex-encoded bytes.
+
+    bank_id: :class:`str`
+        The node identifier (NID) of the bank this transaction was received from.
     """
 
-    __slots__ = ("id", "block", "amount", "recipient", "recipient_bytes", "_recipient_key")
+    __slots__ = (
+        "id",
+        "block",
+        "amount",
+        "fee_paid_to",
+        "memo",
+        "recipient_bytes",
+        "recipient",
+        "_recipient_key",
+        "bank_id",
+    )
 
-    def __init__(self, *, id: str, block: Block, amount: int, recipient: VerifyKey):
+    def __init__(
+        self, *, id: str, block: Block, fee: NodeType, memo: str, amount: int, recipient: VerifyKey, bank_id: str
+    ):
         self.id = id
         self.block = block
         self.amount = amount
+        self.fee_paid_to = fee
+        self.memo = memo
 
         self.recipient_bytes = recipient.encode(encoder=HexEncoder)
         self.recipient = self.recipient_bytes.decode("utf-8")
 
         self._recipient_key = recipient
+
+        self.bank_id = bank_id
 
     def __repr__(self):
         return f"<BankTransaction(id={self.id})>"
@@ -214,7 +240,7 @@ class PaginatedResponse(AsyncIterator[T]):
 
     """
 
-    def __init__(self, _client: HTTPClient, result_schema: Any, type_: T, url: URL, *args: Any, **kwargs: Any):
+    def __init__(self, _client: HTTPClient, result_schema: Any, type_: Type[T], url: URL, *args: Any, **kwargs: Any):
         self._client = _client
         self.result_type = type_
 
@@ -264,6 +290,7 @@ class PaginatedResponse(AsyncIterator[T]):
             else:
                 kwargs = {}
 
+            # print(kwargs)
             data = await self._client.request(("GET", self._next), **kwargs)
 
             with validation.ArgsManager.temp(self.result_type, **self._validator_args):

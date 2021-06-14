@@ -116,6 +116,22 @@ Account
 .. autoclass:: Account()
     :members:
 
+Bank Transaction
+*****************
+
+.. attributetable:: BankTransaction
+
+.. autoclass:: BankTransaction()
+    :members:
+
+Block
+******
+
+.. attributetable:: Block
+
+.. autoclass:: Block()
+    :members:
+
 
 Enumerations
 -------------
@@ -207,6 +223,8 @@ The following is a list of possible exceptions thrown by aiotnb.
 .. autoexception:: HTTPException
     :members:
 
+.. autoexception:: Unauthorized
+
 .. autoexception:: Forbidden
 
 .. autoexception:: NotFound
@@ -236,6 +254,7 @@ Exception Reference
     - :exc:`Exception`
         - :exc:`TNBException`
             - :exc:`HTTPException`
+                - :exc:`Unauthorized`
                 - :exc:`Forbidden`
                 - :exc:`NotFound`
                 - :exc:`NetworkServerError`

@@ -109,7 +109,10 @@ BlockSchema = As(
     Block,
 )
 
-BankTransactionSchema = As({"id": str, "block": BlockSchema, "amount": int, "recipient": PublicKey}, BankTransaction)
+BankTransactionSchema = As(
+    {"id": str, "block": BlockSchema, "amount": int, "fee": Key(NodeType), "memo": str, "recipient": PublicKey},
+    BankTransaction,
+)
 
 
 AccountSchema = As(

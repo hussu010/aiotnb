@@ -6,6 +6,8 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+from enum import Enum
+
 __all__ = ("Bank",)
 
 import logging
@@ -16,7 +18,7 @@ from nacl.signing import SigningKey, VerifyKey
 from yarl import URL
 
 from .common import Account, BankTransaction, Block, PaginatedResponse
-from .enums import AccountOrder, NodeType, UrlProtocol
+from .enums import AccountOrder, NodeType, TransactionOrder, UrlProtocol
 from .http import HTTPClient, HTTPMethod, Route
 from .keypair import AnyPubKey, LocalAccount, key_as_str
 from .schemas import AccountSchema, BankTransactionSchema
@@ -129,9 +131,49 @@ class Bank:
         *,
         offset: int = 0,
         limit: int = 0,
-        ordering: AccountOrder = AccountOrder.created_asc,
+        ordering: AccountOrder = AccountOrder.created,
         page_limit: int = 50,
     ):
+        """
+        Request a list of accounts a bank is aware of.
+
+        .. seealso
+            This is a *paginated* endpoint, so this method returns a :class:`.PaginatedResponse`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many accounts to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of accounts to return.
+
+        ordering: :class:`.AccountOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 50. You should not have to use this.
+
+        Raises
+        ------
+        :exc:`Forbidden`
+            The server did not allow access to this endpoint.
+
+        :exc:`NotFound`
+            The endpoint URL was not present on the server.
+
+        :exc:`NetworkServerError`
+            The server encountered an error.
+
+        :exc:`HTTPException`
+            Something else went wrong.
+
+        Returns
+        -------
+        :class:`PaginatedResponse`
+            An async iterator of :class:`Account` objects.
+
+        """
         payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
 
         _, url = Route(HTTPMethod.get, "accounts").resolve(self.address)
@@ -149,6 +191,46 @@ class Bank:
         return paginator
 
     async def set_account_trust(self, account_number: AnyPubKey, trust: float, node_keypair: LocalAccount) -> Account:
+        """
+        Update the trust measure this bank has for a given account. You need the bank's signing key to do this.
+
+        Parameters
+        ----------
+        account_number: Union[:class:`~nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]
+            The account number to edit trust for. Accepts a variety of types.
+
+        trust: :class:`float`
+            The new trust value for the account.
+
+        node_keypair: :class:`LocalAccount`
+            The keypair corresponding to the specific bank.
+
+            .. note::
+
+                This must be the **bank's** public key and the **bank's** private key.
+
+        Raises
+        ------
+        :exc:`Unauthorized`
+            The server did not accept the message signature.
+
+        :exc:`Forbidden`
+            The server did not allow access to this endpoint.
+
+        :exc:`NotFound`
+            The endpoint URL was not present on the server.
+
+        :exc:`NetworkServerError`
+            The server encountered an error.
+
+        :exc:`HTTPException`
+            Something else went wrong.
+
+        Returns
+        -------
+        :class:`Account`
+            The new account with trust updated.
+        """
         payload = {"trust": trust}
 
         payload_data = message_to_bytes(payload)
@@ -168,3 +250,89 @@ class Bank:
             account = transform(AccountSchema, result)
 
         return account
+
+    async def fetch_transactions(
+        self,
+        *,
+        offset: int = 0,
+        limit: int = 0,
+        ordering: TransactionOrder = TransactionOrder.block_created,
+        page_limit: int = 50,
+        **kwargs,
+    ):
+        """
+        Request a list of transactions a bank is aware of.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many accounts to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of accounts to return.
+
+        ordering: :class:`.AccountOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 50. You should not have to use this.
+
+        filter_sender: Optional[:class:`str`]
+            An account number as a string. Filters results based on sender account number
+
+        filter_fee: Optional[Union[:class:`NodeType`, :class:`str`]]
+            A fee type as a string or ``NodeType``. Filters results based on fee.
+
+        filter_recipient: Optional[:class:`str`]
+            An account number as a string. Filters results based on recipient account number
+
+        Raises
+        ------
+        :exc:`Forbidden`
+            The server did not allow access to this endpoint.
+
+        :exc:`NotFound`
+            The endpoint URL was not present on the server.
+
+        :exc:`NetworkServerError`
+            The server encountered an error.
+
+        :exc:`HTTPException`
+            Something else went wrong.
+
+        Returns
+        -------
+        :class:`PaginatedResponse`
+            An async iterator of :class:`BankTransaction` objects.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        if kwargs.get("filter_sender") is not None:
+            payload["block__sender"] = kwargs.pop("filter_sender")
+
+        if kwargs.get("filter_fee") is not None:
+            fee = kwargs.pop("filter_fee")
+            if isinstance(fee, Enum):
+                fee = fee.value
+
+            payload["fee"] = fee
+
+        if kwargs.get("filter_recipient") is not None:
+            payload["recipient"] = kwargs.pop("filter_recipient")
+
+        if kwargs.get("filter_account") is not None:
+            payload["account_number"] = kwargs.pop("filter_account")
+
+        _, url = Route(HTTPMethod.get, "bank_transactions").resolve(self.address)
+
+        paginator = PaginatedResponse(
+            self._client,
+            BankTransactionSchema,
+            BankTransaction,
+            url,
+            limit=limit,
+            params=payload,
+            validator_args=dict(bank_id=self.node_identifier),
+        )
+
+        return paginator
