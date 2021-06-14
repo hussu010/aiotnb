@@ -296,7 +296,7 @@ class LocalAccount:
             The signing_key was not valid.
         """
         try:
-            self._sign_key = SigningKey(signing_key, encoder=HexEncoder)
+            self._sign_key = SigningKey(signing_key.encode(), encoder=HexEncoder)
         except Exception as e:
             _log.error("signing key load failed")
             raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
@@ -342,7 +342,7 @@ class LocalAccount:
             _log.error("keyfile path was not found")
             raise KeyfileNotFound(f"'{file_path.name}' was not found on the system")
 
-        return cls(raw_key)
+        return cls(raw_key.decode())
 
     @classmethod
     def generate(cls) -> LocalAccount:
@@ -350,7 +350,7 @@ class LocalAccount:
         Generates a new keypair and load an account from it.
         """
 
-        return cls(SigningKey.generate().encode(encoder=HexEncoder))
+        return cls(SigningKey.generate().encode(encoder=HexEncoder).decode())
 
     def write_key_file(self, key_file: Union[Path, str]):
         """
@@ -431,7 +431,7 @@ class LocalAccount:
             The verified message data
         """
         try:
-            verify_key = VerifyKey(account_number, encoder=HexEncoder)
+            verify_key = VerifyKey(account_number.encode(), encoder=HexEncoder)
         except Exception as e:
             _log.error("account number load failed")
             raise VerifyKeyLoadFailed("key must be 64 bytes long and hex-encoded", original=e) from e

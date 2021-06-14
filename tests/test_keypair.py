@@ -49,7 +49,7 @@ def test_write_raw(tmp_path):
 
 def test_sign():
     signature = keypair_2.sign_message(MESSAGE)
-    message = keypair_2.verify(MESSAGE, signature, keypair_2.account_number)
+    message = keypair_2.verify(MESSAGE, signature, keypair_2.account_number.decode())
 
     assert message == MESSAGE
 
