@@ -44,7 +44,7 @@ def test_write_raw(tmp_path):
 
     data = output.read_bytes()
 
-    assert data.decode('utf-8') == keypair_2.signing_key
+    assert data.decode("utf-8") == keypair_2.signing_key
 
 
 @pytest.mark.order(before="test_sign_load")
@@ -64,13 +64,13 @@ def test_sign_load():
 
 @pytest.mark.order(after="test_sign_load")
 def test_sign_load_raw():
-    message = keypair_2.verify_raw(HexEncoder.encode(MESSAGE), stored_message.signature, keypair_1.account_number)
+    message = keypair_2.verify_raw(HexEncoder.encode(MESSAGE), stored_message.signature, keypair_1.account_number_bytes)
 
     assert message == MESSAGE
 
 
 def test_is_valid_keypair():
-    assert is_valid_keypair(keypair_1.account_number, keypair_1.signing_key)
+    assert is_valid_keypair(keypair_1.account_number_bytes, keypair_1.signing_key_bytes)
 
 
 @pytest.mark.xfail
@@ -78,5 +78,5 @@ def test_is_valid_keypair():
 def test_is_not_valid_keypair():
     assert is_valid_keypair(
         b"8e8efdaa4cf11f8350720d29c8cef0c6fda728c822ba03fa5e2533416dd03ff5",
-        keypair_1.signing_key,
+        keypair_1.signing_key_bytes,
     )
