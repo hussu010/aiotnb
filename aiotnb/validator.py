@@ -24,6 +24,8 @@ from .validation import transform
 if TYPE_CHECKING:
     from typing import Any, List, Mapping, Optional
 
+    from .state import InternalState
+
 
 _log = logging.getLogger(__name__)
 
@@ -34,4 +36,8 @@ class Validator:
 
     """
 
-    pass
+    def __init__(self, state: InternalState, **kwargs):
+        self._state = state
+
+        # TODO
+        self.node_identifier_bytes = kwargs.get("node_identifier").encode(encoding=HexEncoder)

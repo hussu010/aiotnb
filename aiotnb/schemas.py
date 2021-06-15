@@ -88,7 +88,7 @@ BankConfig = Schema(
     }
 )
 
-BlockSchema = As(
+BlockSchema = Schema(
     {
         "id": str,
         "created_date": Timestamp,
@@ -96,23 +96,20 @@ BlockSchema = As(
         "balance_key": PublicKey,
         "sender": PublicKey,
         "signature": Signature,
-    },
-    Block,
+    }
 )
 
-BankTransactionSchema = As(
-    {"id": str, "block": BlockSchema, "amount": int, "fee": Key(NodeType), "memo": str, "recipient": PublicKey},
-    BankTransaction,
+BankTransactionSchema = Schema(
+    {"id": str, "block": BlockSchema, "amount": int, "fee": Key(NodeType), "memo": str, "recipient": PublicKey}
 )
 
 
-AccountSchema = As(
+AccountSchema = Schema(
     {
         "id": str,
         "created_date": Timestamp,
         "modified_date": Timestamp,
         "account_number": PublicKey,
         "trust": Key(float),
-    },
-    Account,
+    }
 )

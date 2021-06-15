@@ -22,7 +22,7 @@ from .iter import _PaginatedIterator
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from typing import Any, Optional
+    from typing import Any, Mapping, Optional, Type
 
     from .state import InternalState
 
@@ -244,8 +244,22 @@ class PaginatedResponse(_PaginatedIterator[T]):
     """
 
     def __init__(
-        self, state: InternalState, schema: validation.As, url: URL, *, limit: Optional[int] = None, **kwargs: Any
+        self,
+        state: InternalState,
+        schema: validation.Schema,
+        type_: Type[T],
+        url: URL,
+        *,
+        limit: Optional[int] = None,
+        **kwargs: Any,
     ):
+        _converter = state.get_creator(type_)
+
+        if _converter is None:
+            raise TypeError(f"type {type_} has no creator method in InternalState")
+        else:
+            self._converter = _converter
+
         self._state = state
         self._params = kwargs.pop("params", {})
         self._per_page_limit = self._params.get("limit", 100)
@@ -253,7 +267,7 @@ class PaginatedResponse(_PaginatedIterator[T]):
 
         self._extra_args = kwargs.pop("extra", {})
 
-        self._type = schema.transformer
+        self._type = type_
         self._schema = schema
         self._validator = PAGINATOR_BASE.resolve()
 
@@ -285,6 +299,6 @@ class PaginatedResponse(_PaginatedIterator[T]):
             elif self.limit is not None:
                 self.limit -= item_count
 
-            with validation.ArgsManager.temp(self._type, **self._extra_args):
-                for raw_account in data["results"]:
-                    await self._page.put(self._schema.transform(raw_account))
+            for raw_data in data["results"]:
+                parsed_data = self._schema.transform(raw_data)
+                await self._page.put(self._converter({**parsed_data, **self._extra_args}))

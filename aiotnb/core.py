@@ -99,7 +99,7 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     new_data = transform(BankConfig, data)
 
-    return Bank(state, **new_data)
+    return state.create_bank(new_data)
 
 
 async def connect_to_cv(
