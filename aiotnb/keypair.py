@@ -10,7 +10,7 @@ __all__ = ("LocalAccount", "is_valid_keypair", "key_as_str", "AnyPubKey")
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, cast
+from typing import Union, cast
 
 from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
@@ -139,6 +139,11 @@ class LocalAccount:
     def generate(cls) -> LocalAccount:
         """
         Generates a new keypair and load an account from it.
+
+        Returns
+        -------
+        :class:`LocalAccount`
+            A new account object.
         """
 
         return cls(SigningKey.generate())
@@ -146,7 +151,22 @@ class LocalAccount:
     @classmethod
     def from_hex_string(cls, key: str) -> LocalAccount:
         """
-        Returns a new keypair from the key.
+        Load an account from an existing private key as a hex-encoded string.
+
+        Parameters
+        ----------
+        key: :class:`str`
+            The key to load.
+
+        Raises
+        ------
+        :exc:`SigningKeyLoadFailed`
+            The given key was not valid.
+
+        Returns
+        -------
+        :class:`LocalAccount`
+            A new account object.
         """
         try:
             return cls(SigningKey(key.encode(), encoder=HexEncoder))

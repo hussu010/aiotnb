@@ -8,11 +8,17 @@ from __future__ import annotations
 
 __all__ = ()
 
+import inspect
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, cast
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping
+    from typing import Any, Awaitable, Callable, Mapping, Union
+
+    from typing_extensions import ParamSpec
+
+    P = ParamSpec("P")
+
 
 try:
     import ujson as json
@@ -38,3 +44,23 @@ def message_to_bytes(data: Mapping[str, Any]) -> bytes:
         kwargs["separators"] = (",", ":")
 
     return json.dumps(data, **kwargs).encode("utf-8")  # type: ignore
+
+
+R = TypeVar("R")
+
+# as soon as we have proper ParamSpec support, delete this mess
+def partial(fn: Callable[..., R], *args: ..., **kwargs: ...) -> Callable[..., R]:
+    def inner(*a: ..., **k: ...) -> R:
+        return fn(*args, *a, **kwargs, **k)
+
+    return inner
+
+
+async def coerce_fn(fn: Union[Callable[P, R], Callable[P, Awaitable[R]]], *args: P.args, **kwargs: P.kwargs) -> R:
+    x = fn(*args, **kwargs)
+
+    if inspect.isawaitable(x):
+        return cast(R, await x)
+
+    else:
+        return cast(R, x)

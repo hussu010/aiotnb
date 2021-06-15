@@ -6,11 +6,11 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Account", "PaginatedResponse", "Block", "BankTransaction")
+__all__ = ("Account", "Block", "BankTransaction", "PaginatedResponse")
 
+import asyncio
 import logging
-from enum import Enum
-from typing import TYPE_CHECKING, AsyncIterator, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
@@ -18,12 +18,13 @@ from yarl import URL
 
 from . import validation
 from .enums import NodeType
-from .errors import IteratorEmpty
-from .http import HTTPClient
+from .iter import _PaginatedIterator
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from typing import Any, List, Mapping, Type
+    from typing import Any, Optional
+
+    from .state import InternalState
 
 
 _log = logging.getLogger(__name__)
@@ -40,10 +41,10 @@ class Account:
     id: :class:`str`
         A unique identifier representing this account across the network.
 
-    created: :class:`~datetime.datetime`
+    created: :class:`datetime.datetime`
         Date the account was first seen on the network.
 
-    modified: :class:`~datetime.datetime`
+    modified: :class:`datetime.datetime`
         Date the account last was modified. This includes balance changes, etc. (TODO)
 
     account_number: :class:`str`
@@ -92,10 +93,10 @@ class Block:
     id: :class:`str`
         The block ID on the network.
 
-    created: :class:`~datetime.datetime`
+    created: :class:`datetime.datetime`
         Date when the block was created.
 
-    modified: :class:`~datetime.datetime`
+    modified: :class:`datetime.datetime`
         Date when the block was last modified.
 
     balance_key: :class:`str`
@@ -221,15 +222,17 @@ class BankTransaction:
 T = TypeVar("T")
 Url = validation.As(str, URL)
 
-PAGINATOR_BASE = {
-    "count": int,
-    "next": validation.Maybe(Url),
-    "previous": validation.Maybe(Url),
-    "results": None,
-}
+PAGINATOR_BASE = validation.Schema(
+    {
+        "count": int,
+        "next": validation.Maybe(Url),
+        "previous": validation.Maybe(Url),
+        "results": ...,
+    }
+)
 
 
-class PaginatedResponse(AsyncIterator[T]):
+class PaginatedResponse(_PaginatedIterator[T]):
     """
     An iterator over n-many pages of data from the API. (TODO)
 
@@ -240,124 +243,48 @@ class PaginatedResponse(AsyncIterator[T]):
 
     """
 
-    def __init__(self, _client: HTTPClient, result_schema: Any, type_: Type[T], url: URL, *args: Any, **kwargs: Any):
-        self._client = _client
-        self.result_type = type_
+    def __init__(
+        self, state: InternalState, schema: validation.As, url: URL, *, limit: Optional[int] = None, **kwargs: Any
+    ):
+        self._state = state
+        self._params = kwargs.pop("params", {})
+        self._per_page_limit = self._params.get("limit", 100)
+        self._url = url.with_query(self._params)
 
-        # Paginator args
-        self.limit = kwargs.pop("limit", 0)
+        self._extra_args = kwargs.pop("extra", {})
 
-        # HTTP args
-        self._request_params = kwargs.pop("params", {})
+        self._type = schema.transformer
+        self._schema = schema
+        self._validator = PAGINATOR_BASE.resolve()
 
-        # Validator extra args
-        self._validator_args = kwargs.pop("validator_args", {})
+        self.limit = limit
+        self.received = 0
 
-        schema = PAGINATOR_BASE
-        schema["results"] = [result_schema]
+        self._page = asyncio.Queue()
 
-        self.schema = validation.Schema(schema).resolve()
-
-        self._num_records = 0
-        self._total = 0
-        self._count = 0
-        self._next = url
-        self._previous = None
-        self._current = 0
-
-        self._data: List[T] = []
-
-    async def next(self) -> T:
-        """
-        Step forward one item if possible. (TODO)
-        """
-        if self._next is None and self._current >= self._count or (self.limit != 0 and self._num_records == self.limit):
-            raise IteratorEmpty()
-
-        def _data():
-            data = self._data[self._current]
-            self._current += 1
-            self._num_records += 1
-            return data
-
-        if self._current < self._count:
-            return _data()
-
+    async def _next_page(self):
+        if self.limit is None or self.limit > self._per_page_limit:
+            pull_limit = self._per_page_limit
         else:
-            if self._request_params:
-                kwargs = {"params": self._request_params}
-                self._request_params = None
+            pull_limit = self.limit
+
+        if pull_limit > 0:
+            response = await self._state.client.request(("GET", self._url))
+            data = self._validator.transform(response)
+
+            if data["next"] is not None:
+                self._url = data["next"]
+                self._params = dict(self._url.query)
             else:
-                kwargs = {}
+                self.limit = 0
 
-            # print(kwargs)
-            data = await self._client.request(("GET", self._next), **kwargs)
+            item_count = len(data["results"])
+            if item_count < self._per_page_limit:
+                self.limit = 0
 
-            with validation.ArgsManager.temp(self.result_type, **self._validator_args):
-                result = validation.transform(self.schema, data)
+            elif self.limit is not None:
+                self.limit -= item_count
 
-            self._current = 0
-            self._total = result["count"]
-            self._next = result["next"]
-            self._previous = result["previous"]
-            self._data = result["results"]
-            self._count = len(self._data)
-
-            if self._current < self._count:
-                return _data()
-
-            raise IteratorEmpty()
-
-    async def previous(self) -> T:
-        """
-        Step backward one item if possible. (TODO)
-        """
-        if self._previous is None and self._current < 0 or (self.limit != 0 and self._num_records == self.limit):
-            raise IteratorEmpty()
-
-        def _data():
-            data = self._data[self._current]
-            self._current -= 1
-            self._num_records += 1
-            return data
-
-        if 0 <= self._current <= (self._count - 1):
-            return _data()
-
-        else:
-
-            if self._request_params:
-                kwargs = {"params": self._request_params}
-                self._request_params = None
-            else:
-                kwargs = {}
-
-            data = await self._client.request(("GET", cast(URL, self._previous)), **kwargs)
-
-            with validation.ArgsManager.temp(self.result_type, **self._validator_args):
-                result = validation.transform(self.schema, data)
-
-            self._total = result["count"]
-            self._next = result["next"]
-            self._previous = result["previous"]
-            self._data = result["results"]
-            self._count = len(self._data)
-            self._current = self._count - 1
-
-            if 0 <= self._current <= (self._count - 1):
-                return _data()
-
-            raise IteratorEmpty()
-
-    async def flatten(self) -> List[T]:
-        """
-        Collect the entire iterator into a single list. (TODO)
-        """
-        return [t async for t in self]
-
-    async def __anext__(self) -> T:
-        try:
-            return await self.next()
-
-        except IteratorEmpty:
-            raise StopAsyncIteration()
+            with validation.ArgsManager.temp(self._type, **self._extra_args):
+                for raw_account in data["results"]:
+                    await self._page.put(self._schema.transform(raw_account))

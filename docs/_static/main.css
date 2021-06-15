@@ -446,6 +446,9 @@ div.code-block-caption {
     border: 2px solid var(--color-background-border);
 }
 
+.admonition-supported-operations {
+  margin-top:  2rem;
+}
 
 .admonition-supported-operations p.admonition-title {
   font-weight:  700;

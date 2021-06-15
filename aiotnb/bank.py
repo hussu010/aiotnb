@@ -11,15 +11,15 @@ from enum import Enum
 __all__ = ("Bank",)
 
 import logging
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
-from nacl.signing import SigningKey, VerifyKey
+from nacl.signing import VerifyKey
 from yarl import URL
 
-from .common import Account, BankTransaction, Block, PaginatedResponse
+from .common import Account, BankTransaction, PaginatedResponse
 from .enums import AccountOrder, NodeType, TransactionOrder, UrlProtocol
-from .http import HTTPClient, HTTPMethod, Route
+from .http import HTTPMethod, Route
 from .keypair import AnyPubKey, LocalAccount, key_as_str
 from .schemas import AccountSchema, BankTransactionSchema
 from .utils import message_to_bytes
@@ -27,6 +27,8 @@ from .validation import ArgsManager, transform
 
 if TYPE_CHECKING:
     from typing import Any, Mapping, Optional
+
+    from .state import InternalState
 
 
 _log = logging.getLogger(__name__)
@@ -79,7 +81,7 @@ class Bank:
 
     def __init__(
         self,
-        _client: HTTPClient,
+        state: InternalState,
         *,
         account_number: VerifyKey,
         ip_address: URL,
@@ -119,10 +121,10 @@ class Bank:
 
         self.primary_validator = primary_validator
 
-        self._client = _client
+        self._state = state
 
     async def _request(self, route: Route, **kwargs):
-        return await self._client.request(route.resolve(self.address), **kwargs)
+        return await self._state.client.request(route.resolve(self.address), **kwargs)
 
     # Endpoint methods
 
@@ -130,15 +132,18 @@ class Bank:
         self,
         *,
         offset: int = 0,
-        limit: int = 0,
+        limit: Optional[int] = None,
         ordering: AccountOrder = AccountOrder.created,
-        page_limit: int = 50,
+        page_limit: int = 100,
     ):
         """
         Request a list of accounts a bank is aware of.
 
-        .. seealso
-            This is a *paginated* endpoint, so this method returns a :class:`.PaginatedResponse`.
+        Returns an async iterator over ``Account`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
 
         Parameters
         ----------
@@ -152,40 +157,39 @@ class Bank:
             Determines in what order the results are returned.
 
         page_limit: :class:`int`
-            Determines how many results to return per page, defaults to 50. You should not have to use this.
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
         Raises
         ------
-        :exc:`Forbidden`
+        ~aiotnb.Forbidden
             The server did not allow access to this endpoint.
 
-        :exc:`NotFound`
+        ~aiotnb.NotFound
             The endpoint URL was not present on the server.
 
-        :exc:`NetworkServerError`
+        ~aiotnb.NetworkServerError
             The server encountered an error.
 
-        :exc:`HTTPException`
+        ~aiotnb.HTTPException
             Something else went wrong.
 
-        Returns
-        -------
-        :class:`PaginatedResponse`
-            An async iterator of :class:`Account` objects.
+        Yields
+        ------
+        :class:`.Account`
+            The account information.
 
         """
         payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
 
         _, url = Route(HTTPMethod.get, "accounts").resolve(self.address)
 
-        paginator = PaginatedResponse(
-            self._client,
+        paginator: PaginatedResponse[Account] = PaginatedResponse(
+            self._state,
             AccountSchema,
-            Account,
             url,
             limit=limit,
             params=payload,
-            validator_args=dict(bank_id=self.node_identifier),
+            extra=dict(bank_id=self.node_identifier),
         )
 
         return paginator
@@ -202,7 +206,7 @@ class Bank:
         trust: :class:`float`
             The new trust value for the account.
 
-        node_keypair: :class:`LocalAccount`
+        node_keypair: :class:`.LocalAccount`
             The keypair corresponding to the specific bank.
 
             .. note::
@@ -211,24 +215,24 @@ class Bank:
 
         Raises
         ------
-        :exc:`Unauthorized`
+        ~aiotnb.Unauthorized
             The server did not accept the message signature.
 
-        :exc:`Forbidden`
+        ~aiotnb.Forbidden
             The server did not allow access to this endpoint.
 
-        :exc:`NotFound`
+        ~aiotnb.NotFound
             The endpoint URL was not present on the server.
 
-        :exc:`NetworkServerError`
+        ~aiotnb.NetworkServerError
             The server encountered an error.
 
-        :exc:`HTTPException`
+        ~aiotnb.HTTPException
             Something else went wrong.
 
         Returns
         -------
-        :class:`Account`
+        :class:`.Account`
             The new account with trust updated.
         """
         payload = {"trust": trust}
@@ -255,13 +259,19 @@ class Bank:
         self,
         *,
         offset: int = 0,
-        limit: int = 0,
+        limit: Optional[int] = None,
         ordering: TransactionOrder = TransactionOrder.block_created,
-        page_limit: int = 50,
+        page_limit: int = 100,
         **kwargs,
     ):
         """
         Request a list of transactions a bank is aware of.
+
+        Returns an async iterator over ``BankTransaction`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
 
         Parameters
         ----------
@@ -275,7 +285,7 @@ class Bank:
             Determines in what order the results are returned.
 
         page_limit: :class:`int`
-            Determines how many results to return per page, defaults to 50. You should not have to use this.
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
         filter_sender: Optional[:class:`str`]
             An account number as a string. Filters results based on sender account number
@@ -288,22 +298,22 @@ class Bank:
 
         Raises
         ------
-        :exc:`Forbidden`
+        ~aiotnb.Forbidden
             The server did not allow access to this endpoint.
 
-        :exc:`NotFound`
+        ~aiotnb.NotFound
             The endpoint URL was not present on the server.
 
-        :exc:`NetworkServerError`
+        ~aiotnb.NetworkServerError
             The server encountered an error.
 
-        :exc:`HTTPException`
+        ~aiotnb.HTTPException
             Something else went wrong.
 
-        Returns
-        -------
-        :class:`PaginatedResponse`
-            An async iterator of :class:`BankTransaction` objects.
+        Yields
+        ------
+        :class:`.BankTransaction`
+            The transaction details.
         """
         payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
 
@@ -325,14 +335,13 @@ class Bank:
 
         _, url = Route(HTTPMethod.get, "bank_transactions").resolve(self.address)
 
-        paginator = PaginatedResponse(
-            self._client,
+        paginator: PaginatedResponse[BankTransaction] = PaginatedResponse(
+            self._state,
             BankTransactionSchema,
-            BankTransaction,
             url,
             limit=limit,
             params=payload,
-            validator_args=dict(bank_id=self.node_identifier),
+            extra=dict(bank_id=self.node_identifier),
         )
 
         return paginator

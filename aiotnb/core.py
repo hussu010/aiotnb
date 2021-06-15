@@ -15,9 +15,9 @@ from yarl import URL
 
 from .bank import Bank
 from .confirmation_validator import ConfirmationValidator
-from .errors import ValidatorException
 from .http import HTTPClient, HTTPMethod, Route
 from .schemas import BankConfig
+from .state import InternalState
 from .validation import transform
 from .validator import Validator
 
@@ -89,6 +89,8 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     client = HTTPClient(connector, proxy=proxy, proxy_auth=proxy_auth, loop=loop)
 
+    state = InternalState(client)
+
     await client.init_session()
 
     route = Route(HTTPMethod.get, "config").resolve(url_base)
@@ -97,7 +99,7 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     new_data = transform(BankConfig, data)
 
-    return Bank(client, **new_data)
+    return Bank(state, **new_data)
 
 
 async def connect_to_cv(

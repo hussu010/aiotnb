@@ -93,23 +93,9 @@ Confirmation Validator
     :members:
 
 
-Common
-~~~~~~~
-
-Paginated Responses
-********************
-
-Some API endpoints return just one page of possible data. In aiotnb, these methods return an async iterator over the pages of data.
-
-.. attributetable:: PaginatedResponse
-
-.. autoclass:: PaginatedResponse()
-    :members:
-
-
 
 Account
-********
+~~~~~~~~
 
 .. attributetable:: Account
 
@@ -117,7 +103,7 @@ Account
     :members:
 
 Bank Transaction
-*****************
+~~~~~~~~~~~~~~~~~
 
 .. attributetable:: BankTransaction
 
@@ -125,12 +111,71 @@ Bank Transaction
     :members:
 
 Block
-******
+~~~~~~
 
 .. attributetable:: Block
 
 .. autoclass:: Block()
     :members:
+
+Async Iterator
+--------------------
+
+Some API endpoints return data in a series of pages marked by offsets. To make using these easier, aiotnb includes an async iterator that automatically fetches new pages as needed.
+
+.. class:: AsyncIterator
+
+
+
+    .. admonition:: Supported Operations
+
+        .. describe:: async for x in y
+
+            Asynchronously iterate over the iterator's contents.
+
+    .. method:: next()
+        :async:
+
+        |coro|
+
+        Attempts to advanced the iterator by one element.
+        Raises :exc:`IteratorEmpty` when no more elements can be found.
+
+    .. method:: find(predicate)
+        :async:
+
+        |coro|
+
+        Returns the first item in the iterator that satisfies ``predicate``.
+
+        :param predicate: The predicate (check function) to use. Can be a coroutine.
+        :return: The first element that returns ``True`` for the predicate, or ``None`` if none do.
+
+    .. method:: flatten()
+        :async:
+
+        |coro|
+
+        Collects the iterator into a single :class:`list`.
+
+        :return: A list of every element.
+        :rtype: list
+
+    .. method:: map(func)
+
+        Does basically the same thing as the builtin map, but returns another async iterator with ``func`` applied to every element. The function can be a regular function or a coroutine.
+
+        :param func: Function to call on every element in the iterator
+        :rtype: AsyncIterator
+
+    .. method:: filter(predicate)
+
+        Also does basically the same thing as the builtin filter, and returns another async iterator including every element that satisfies ``predicate``. This function can also be a coroutine.
+
+        :param predicate: Check function to apply to every element.
+        :rtype: AsyncIterator
+
+
 
 
 Enumerations

@@ -7,7 +7,6 @@ Copyright (c) 2021 AnonymousDapper
 from __future__ import annotations
 
 __all__ = (
-    "partial",
     "Key",
     "PublicKey",
     "BalanceLock",
@@ -29,19 +28,11 @@ from yarl import URL
 
 from .common import Account, BankTransaction, Block
 from .enums import NodeType, UrlProtocol
+from .utils import partial
 from .validation import As, Const, Fn, Ignore, Maybe, Schema, Type
 
 if TYPE_CHECKING:
-    from typing import Callable, Optional, TypeVar
-
-    R = TypeVar("R")
-
-# as soon as we have proper ParamSpec support, delete this mess
-def partial(fn: Callable[..., R], *args: ..., **kwargs: ...) -> Callable[..., R]:
-    def inner(*a: ..., **k: ...) -> R:
-        return fn(*args, *a, **kwargs, **k)
-
-    return inner
+    from typing import Optional
 
 
 def _parse_iso8601_utc(timestamp: str) -> datetime:
