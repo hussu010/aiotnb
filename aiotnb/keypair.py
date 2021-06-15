@@ -361,11 +361,11 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
 
 def key_as_str(key: AnyPubKey) -> str:
     """
-    Takes a key of type AnyPubKey and converts it into a string.
+    Takes a key in various types and converts it into a string.
 
     Parameters
     ----------
-    key: :class:`AnyPubKey`
+    key: :ref:`AnyPubKey <type_anypubkey>`
         The account number of the keypair to validate.
 
     Returns
