@@ -154,7 +154,6 @@ class LocalAccount:
             _log.error("private key load failed")
             raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
 
-
     def write_key_file(self, key_file: Union[Path, str]):
         """
         Write out the account's private key for safekeeping.
