@@ -14,6 +14,7 @@ __all__ = (
     "Signature",
     "Url",
     "BankConfig",
+    "BankDetails",
     "BlockSchema",
     "BankTransactionSchema",
     "AccountSchema",
@@ -76,7 +77,20 @@ Url = Key(URL)
 
 BankConfig = Schema(
     {
-        "primary_validator": dict,
+        "primary_validator": {
+            "account_number": PublicKey,
+            "ip_address": Url,
+            "node_identifier": PublicKey,
+            "port": Maybe(int),
+            "protocol": Key(UrlProtocol),
+            "version": str,
+            "default_transaction_fee": int,
+            "root_account_file": Url,
+            "root_account_file_hash": PublicKey,
+            "seed_block_identifier": str,
+            "daily_confirmation_rate": Maybe(int),
+            "trust": Key(float),
+        },
         "account_number": PublicKey,
         "ip_address": Url,
         "node_identifier": PublicKey,
@@ -85,6 +99,19 @@ BankConfig = Schema(
         "version": str,
         "default_transaction_fee": int,
         "node_type": Key(NodeType),
+    }
+)
+
+BankDetails = Schema(
+    {
+        "account_number": PublicKey,
+        "ip_address": Url,
+        "node_identifier": PublicKey,
+        "port": Maybe(int),
+        "protocol": Key(UrlProtocol),
+        "version": str,
+        "default_transaction_fee": int,
+        "trust": Key(float),
     }
 )
 

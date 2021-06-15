@@ -6,7 +6,10 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+import asyncio
 from enum import Enum
+
+from aiotnb.errors import ValidatorFailed
 
 __all__ = ("Bank",)
 
@@ -18,12 +21,13 @@ from nacl.signing import VerifyKey
 from yarl import URL
 
 from .common import Account, BankTransaction, PaginatedResponse
-from .enums import AccountOrder, NodeType, TransactionOrder, UrlProtocol
+from .enums import AccountOrder, BankOrder, NodeType, TransactionOrder, UrlProtocol
 from .http import HTTPMethod, Route
 from .keypair import AnyPubKey, LocalAccount, key_as_str
-from .schemas import AccountSchema, BankTransactionSchema
+from .schemas import AccountSchema, BankConfig, BankDetails, BankTransactionSchema
 from .utils import message_to_bytes
 from .validation import ArgsManager, transform
+from .validator import Validator
 
 if TYPE_CHECKING:
     from typing import Any, Mapping, Optional
@@ -79,6 +83,11 @@ class Bank:
 
     """
 
+    def __eq__(self, other):
+        if isinstance(other, Bank):
+            return self.node_identifier == other.node_identifier
+        raise NotImplemented
+
     def __init__(
         self,
         state: InternalState,
@@ -91,7 +100,7 @@ class Bank:
         version: str,
         default_transaction_fee: int,
         node_type: NodeType,
-        primary_validator: Mapping[str, Any],
+        primary_validator: Optional[Validator],
     ):
         self.account_number_bytes = account_number.encode(encoder=HexEncoder)
         self.account_number = self.account_number_bytes.decode("utf-8")
@@ -119,12 +128,32 @@ class Bank:
             port=port or 80,
         )
 
-        self.primary_validator = primary_validator
+        self._primary_validator = primary_validator
 
         self._state = state
 
-    async def _request(self, route: Route, **kwargs):
-        return await self._state.client.request(route.resolve(self.address), **kwargs)
+    @property
+    def primary_validator(self):
+        if self._primary_validator is None:
+            # Using ensure_future here instead of create_task to allow for Python < 3.7
+            return asyncio.ensure_future(self._get_primary_validator()).result()
+
+        else:
+            return self._primary_validator
+
+    async def _get_primary_validator(self):
+        data = await self._request(Route(HTTPMethod.get, "config"))
+
+        if BankConfig.validate(data):
+            self._primary_validator = self._state.create_validator(data["primary_validator"])
+
+        else:
+            raise ValidatorFailed(f"got data: {data!r}")
+
+        return self._primary_validator
+
+    def _request(self, route: Route, **kwargs):
+        return self._state.client.request(route.resolve(self.address), **kwargs)
 
     # Endpoint methods
 
@@ -135,7 +164,7 @@ class Bank:
         limit: Optional[int] = None,
         ordering: AccountOrder = AccountOrder.created,
         page_limit: int = 100,
-    ):
+    ) -> PaginatedResponse[Account]:
         """
         Request a list of accounts a bank is aware of.
 
@@ -183,9 +212,10 @@ class Bank:
 
         _, url = Route(HTTPMethod.get, "accounts").resolve(self.address)
 
-        paginator: PaginatedResponse[Account] = PaginatedResponse(
+        paginator = PaginatedResponse(
             self._state,
             AccountSchema,
+            Account,
             url,
             limit=limit,
             params=payload,
@@ -196,7 +226,7 @@ class Bank:
 
     async def set_account_trust(self, account_number: AnyPubKey, trust: float, node_keypair: LocalAccount) -> Account:
         """
-        Update the trust measure this bank has for a given account. You need the bank's signing key to do this.
+        Update the trust measure this bank has for a given account. You need this bank's signing key to do this.
 
         Parameters
         ----------
@@ -263,7 +293,7 @@ class Bank:
         ordering: TransactionOrder = TransactionOrder.block_created,
         page_limit: int = 100,
         **kwargs,
-    ):
+    ) -> PaginatedResponse[BankTransaction]:
         """
         Request a list of transactions a bank is aware of.
 
@@ -317,27 +347,12 @@ class Bank:
         """
         payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
 
-        if kwargs.get("filter_sender") is not None:
-            payload["block__sender"] = kwargs.pop("filter_sender")
+        _, url = Route(HTTPMethod.get, "banks").resolve(self.address)
 
-        if kwargs.get("filter_fee") is not None:
-            fee = kwargs.pop("filter_fee")
-            if isinstance(fee, Enum):
-                fee = fee.value
-
-            payload["fee"] = fee
-
-        if kwargs.get("filter_recipient") is not None:
-            payload["recipient"] = kwargs.pop("filter_recipient")
-
-        if kwargs.get("filter_account") is not None:
-            payload["account_number"] = kwargs.pop("filter_account")
-
-        _, url = Route(HTTPMethod.get, "bank_transactions").resolve(self.address)
-
-        paginator: PaginatedResponse[BankTransaction] = PaginatedResponse(
+        paginator = PaginatedResponse(
             self._state,
             BankTransactionSchema,
+            BankTransaction,
             url,
             limit=limit,
             params=payload,
@@ -345,3 +360,129 @@ class Bank:
         )
 
         return paginator
+
+    async def fetch_banks(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: BankOrder = BankOrder.trust_desc,
+        page_limit: int = 100,
+    ) -> PaginatedResponse[Bank]:
+        """
+        Request a list of other banks a bank is connected is aware of.
+
+        Returns an async iterator over ``Bank`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many accounts to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of accounts to return.
+
+        ordering: :class:`.BankOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, max of 100. You should not have to adjust this.
+
+        Raises
+        ------
+        ~aiotnb.Forbidden
+            The server did not allow access to this endpoint.
+
+        ~aiotnb.NotFound
+            The endpoint URL was not present on the server.
+
+        ~aiotnb.NetworkServerError
+            The server encountered an error.
+
+        ~aiotnb.HTTPException
+            Something else went wrong.
+
+        Yields
+        ------
+        :class:`.Bank`
+            Bank object.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        _, url = Route(HTTPMethod.get, "banks").resolve(self.address)
+
+        paginator = PaginatedResponse(
+            self._state,
+            BankDetails,
+            Bank,
+            url,
+            limit=limit,
+            params=payload,
+        )
+
+        return paginator
+
+    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: LocalAccount) -> Bank:
+        """
+        Update the trust measure this bank has for a given bank. You need this bank's signing key to do this.
+
+        Parameters
+        ----------
+        node_identifier: Union[:class:`~nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]
+            The node identifier (NID) of the bank to edit trust for. Accepts a variety of types.
+
+        trust: :class:`float`
+            The new trust value for the bank.
+
+        node_keypair: :class:`.LocalAccount`
+            The keypair corresponding to the specific bank.
+
+            .. note::
+
+                This must be the **bank's** public key and the **bank's** private key.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.Forbidden
+            The server did not allow access to this endpoint.
+
+        ~aiotnb.NotFound
+            The endpoint URL was not present on the server.
+
+        ~aiotnb.NetworkServerError
+            The server encountered an error.
+
+        ~aiotnb.HTTPException
+            Something else went wrong.
+
+        Returns
+        -------
+        :class:`.Bank`
+            The new account with trust updated.
+        """
+        payload = {"trust": trust}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.patch, "banks/{node_identifier}", node_identifier=key_as_str(node_identifier))
+
+        result = await self._request(route, json=payload)
+
+        new_data = AccountSchema.transform(result)
+        bank = self._state.create_bank(new_data)
+
+        return bank

@@ -36,8 +36,8 @@ class Validator:
 
     """
 
-    def __init__(self, state: InternalState, **kwargs):
+    def __init__(self, state: InternalState, *, node_identifier: VerifyKey, **kwargs):
         self._state = state
 
         # TODO
-        self.node_identifier_bytes = kwargs.get("node_identifier").encode(encoding=HexEncoder)
+        self.node_identifier_bytes = node_identifier.encode(encoder=HexEncoder)

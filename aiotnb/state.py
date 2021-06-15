@@ -57,6 +57,8 @@ class InternalState:
 
     # Creator methods
 
+    # TODO IMPORTANT: handle updating of data while still returning cached object
+
     def create_bank(self, data) -> Bank:
         node_id = data["node_identifier"].encode(encoder=HexEncoder)
 
@@ -64,13 +66,16 @@ class InternalState:
             return self._nodes[node_id]
 
         else:
+            validator = self.create_validator(data["primary_validator"])
+            data["primary_validator"] = validator
+
             bank = Bank(self, **data)
             self._nodes[bank.node_identifier_bytes] = bank
 
             return bank
 
     def create_validator(self, data) -> Validator:
-        node_id = data["node_id"].encode(encoder=HexEncoder)
+        node_id = data["node_identifier"].encode(encoder=HexEncoder)
 
         if node_id in self._nodes:
             return self._nodes[node_id]

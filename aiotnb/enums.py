@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("AccountOrder", "TransactionOrder", "UrlProtocol", "NodeType")
+__all__ = ("AccountOrder", "TransactionOrder", "BankOrder", "UrlProtocol", "NodeType")
 
 import logging
 from enum import Enum
@@ -44,6 +44,27 @@ class TransactionOrder(Enum):
     id_desc = "-id"
     recipient = "recipient"
     recipient_desc = "-recipient"
+
+
+class BankOrder(Enum):
+    id = "id"
+    id_desc = "-id"
+    account_number = "account_number"
+    account_number_desc = "-account_number"
+    ip_address = "ip_address"
+    ip_address_desc = "-ip_address"
+    node_identifier = "node_identifier"
+    node_identifier_desc = "-node_identifier"
+    port = "port"
+    port_desc = "-port"
+    protocol = "protocol"
+    protocol_desc = "-protocol"
+    version = "version"
+    version_desc = "-version"
+    default_transaction_fee = "default_transaction_fee"
+    default_transaction_fee_desc = "-default_transaction_fee"
+    trust = "trust"
+    trust_desc = "-trust"
 
 
 class UrlProtocol(Enum):
