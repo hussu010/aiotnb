@@ -143,6 +143,18 @@ class LocalAccount:
 
         return cls(SigningKey.generate())
 
+    @classmethod
+    def from_hex_string(cls, key: str) -> LocalAccount:
+        """
+        Returns a new keypair from the key.
+        """
+        try:
+            return cls(SigningKey(key.encode(), encoder=HexEncoder))
+        except Exception as e:
+            _log.error("private key load failed")
+            raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
+
+
     def write_key_file(self, key_file: Union[Path, str]):
         """
         Write out the account's private key for safekeeping.
@@ -329,6 +341,19 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
 
 
 def key_as_str(key: AnyPubKey) -> str:
+    """
+    Takes a key of type AnyPubKey and converts it into a string.
+
+    Parameters
+    ----------
+    key: :class:`AnyPubKey`
+        The account number of the keypair to validate.
+
+    Returns
+    -------
+    :class:`str`
+        The string version of the key.
+    """
     if type(key) == VerifyKey:
         new_key = cast(VerifyKey, key).encode(encoder=HexEncoder).decode("utf-8")
 

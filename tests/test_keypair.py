@@ -10,7 +10,7 @@ import pytest
 from nacl.encoding import HexEncoder
 from nacl.signing import SignedMessage
 
-from aiotnb.core import LocalAccount, is_valid_keypair
+from aiotnb.keypair import LocalAccount, is_valid_keypair
 
 keypair_1 = LocalAccount.generate()
 keypair_2 = LocalAccount.generate()
@@ -44,7 +44,7 @@ def test_write_raw(tmp_path):
 
     data = output.read_bytes()
 
-    assert data == keypair_2.signing_key
+    assert data.decode('utf-8') == keypair_2.signing_key
 
 
 @pytest.mark.order(before="test_sign_load")

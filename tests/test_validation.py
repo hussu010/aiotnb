@@ -10,7 +10,7 @@ import pytest
 from nacl.signing import VerifyKey
 from yarl import URL
 
-from aiotnb.schemas import AccountNumber, Timestamp, Url
+from aiotnb.schemas import PublicKey, Timestamp, Url
 from aiotnb.validation import As, Maybe, Schema, validate_with
 
 pytestmark = pytest.mark.asyncio
@@ -48,7 +48,7 @@ complex_schema = Schema(
                 "id": str,
                 "created_date": Timestamp,
                 "modified_date": Timestamp,
-                "account_number": AccountNumber,
+                "account_number": PublicKey,
                 "trust": As(str, float),
             }
         ],
