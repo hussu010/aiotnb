@@ -13,16 +13,6 @@ from aiotnb.http import HTTPClient, HTTPMethod, Route
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture  # type: ignore
-async def client():
-    c = HTTPClient()
-    await c.init_session()
-
-    yield c
-
-    await c.close()
-
-
 def test_route():
     r = Route(HTTPMethod.post, "a/b/c")
 
@@ -37,7 +27,7 @@ def test_route_param():
     assert r.resolve(URL("http://test.bank.site")) == ("GET", URL("http://test.bank.site/banks/test-node"))
 
 
-async def test_get(client):
+async def test_get(client: HTTPClient):
     payload = {"test": "yes"}
     route = Route(HTTPMethod.get, "get")
 
@@ -46,7 +36,7 @@ async def test_get(client):
     assert result["args"] == payload
 
 
-async def test_post(client):
+async def test_post(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
     route = Route(HTTPMethod.post, "post")
@@ -56,7 +46,7 @@ async def test_post(client):
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_put(client):
+async def test_put(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
     route = Route(HTTPMethod.put, "put")
@@ -66,7 +56,7 @@ async def test_put(client):
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_patch(client):
+async def test_patch(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
     route = Route(HTTPMethod.patch, "patch")
@@ -76,7 +66,7 @@ async def test_patch(client):
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_delete(client):
+async def test_delete(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
     route = Route(HTTPMethod.delete, "delete")
@@ -86,7 +76,7 @@ async def test_delete(client):
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_403(client):
+async def test_403(client: HTTPClient):
     payload = {"code": 403}
 
     route = Route(HTTPMethod.get, "status/{code}", **payload)
@@ -98,7 +88,7 @@ async def test_403(client):
         assert isinstance(e, Forbidden)
 
 
-async def test_404(client):
+async def test_404(client: HTTPClient):
     payload = {"code": 404}
 
     route = Route(HTTPMethod.get, "status/{code}", **payload)
@@ -110,7 +100,7 @@ async def test_404(client):
         assert isinstance(e, NotFound)
 
 
-async def test_503(client):
+async def test_503(client: HTTPClient):
     payload = {"code": 503}
 
     route = Route(HTTPMethod.get, "status/{code}", **payload)
@@ -122,7 +112,7 @@ async def test_503(client):
         assert isinstance(e, NetworkServerError)
 
 
-async def test_502(client):
+async def test_502(client: HTTPClient):
     payload = {"code": 502}
 
     route = Route(HTTPMethod.get, "status/{code}", **payload)

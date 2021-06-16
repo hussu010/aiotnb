@@ -19,15 +19,6 @@ MESSAGE = b"THIS IS-A TEST[!@]"
 stored_message = None
 
 
-@pytest.mark.order(before="test_write_load")
-def test_repr(capsys):
-    with capsys.disabled():
-        print(keypair_1, end=" ")
-        print(keypair_2, end="")
-
-    assert True
-
-
 def test_write_load(tmp_path):
     output = tmp_path / "private_1.key"
     keypair_1.write_key_file(output)

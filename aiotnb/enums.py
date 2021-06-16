@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("AccountOrder", "TransactionOrder", "BankOrder", "UrlProtocol", "NodeType")
+__all__ = ("AccountOrder", "TransactionOrder", "BankOrder", "BlockOrder", "UrlProtocol", "NodeType")
 
 import logging
 from enum import Enum
@@ -65,6 +65,21 @@ class BankOrder(Enum):
     default_transaction_fee_desc = "-default_transaction_fee"
     trust = "trust"
     trust_desc = "-trust"
+
+
+class BlockOrder(Enum):
+    created = "created_date"
+    created_desc = "-created_date"
+    modified = "modified_date"
+    modified_desc = "-modified_date"
+    id = "id"
+    id_desc = "-id"
+    balance_key = "balance_key"
+    balance_key_desc = "-balance_key"
+    sender = "sender"
+    sender_desc = "-sender"
+    signature = "signature"
+    signature_desc = "-signature"
 
 
 class UrlProtocol(Enum):

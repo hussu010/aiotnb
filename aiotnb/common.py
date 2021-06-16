@@ -60,6 +60,17 @@ class Account:
         The node identifier (NID) of the bank this account was received from. This is only useful when looking at account trust.
     """
 
+    __slots__ = (
+        "id",
+        "created",
+        "modified",
+        "trust",
+        "bank_id",
+        "account_number_bytes",
+        "account_number",
+        "_public_key",
+    )
+
     def __init__(
         self,
         *,
@@ -79,6 +90,12 @@ class Account:
         self.account_number_bytes = account_number.encode(encoder=HexEncoder)
         self.account_number = self.account_number_bytes.decode("utf-8")
         self._public_key = account_number
+
+    def _update(self, *, created_date: datetime, modified_date: datetime, trust: float, **kwargs):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+        self.trust = trust
 
     def __repr__(self):
         return f"<Account({self.account_number})>"
@@ -111,7 +128,10 @@ class Block:
     sender_bytes: :class:`bytes`
         The sender's account number as hex-encoded bytes.
 
-    signature: :class:`bytes`
+    signature: :class:`str`
+        Signature for this block.
+
+    signature_bytes: :class:`bytes`
         Signature for this block as hex-encoded bytes.
     """
 
@@ -124,6 +144,7 @@ class Block:
         "sender",
         "sender_bytes",
         "signature",
+        "signature_bytes",
         "_balance_key",
         "_sender_key",
     )
@@ -141,7 +162,9 @@ class Block:
         self.id = id
         self.created = created_date
         self.modified = modified_date
-        self.signature = signature
+
+        self.signature_bytes = signature
+        self.signature = self.signature_bytes.decode("utf-8")
 
         self.balance_key_bytes = balance_key.encode(encoder=HexEncoder)
         self.balance_key = self.balance_key_bytes.decode("utf-8")
@@ -171,8 +194,8 @@ class BankTransaction:
     amount: :class:`int`
         Amount of TNBC involved in this transaction.
 
-    fee_paid_to: :class:`.NodeType`
-        Indicates what node type received this fee payment. If this is ``NodeType.none``, then the transaction is not a fee payment.
+    fee_paid_to: Optional[:class:`.NodeType`]
+        Indicates what node type received this fee payment. If this is ``None``, then the transaction is not a fee payment.
 
     memo: :class:`str`
         Memo text sent with the transaction.
@@ -205,7 +228,7 @@ class BankTransaction:
         self.id = id
         self.block = block
         self.amount = amount
-        self.fee_paid_to = fee
+        self.fee_paid_to = None if fee == NodeType.none else fee
         self.memo = memo
 
         self.recipient_bytes = recipient.encode(encoder=HexEncoder)

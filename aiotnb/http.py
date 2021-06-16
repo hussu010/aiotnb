@@ -91,6 +91,8 @@ class HTTPClient:
 
         self.user_agent = f"aiotnb (https://github.com/AnonymousDapper/aiotnb {__version__}) Python/{sys.version_info.major}.{sys.version_info.minor}"
 
+        self._req_count = 0
+
     @property
     def _session(self) -> Optional[ClientSession]:
         return self.__session
@@ -120,6 +122,8 @@ class HTTPClient:
             await self.__session.close()
 
     async def request(self, route_data: Tuple[str, URL], **kwargs: Any) -> Mapping[str, Any]:
+        self._req_count += 1
+
         headers = {"User-Agent": self.user_agent}
         method, url = route_data
 

@@ -6,33 +6,46 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-import asyncio
-from enum import Enum
-
-from aiotnb.errors import ValidatorFailed
-
 __all__ = ("Bank",)
 
+import asyncio
 import logging
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
-from nacl.signing import VerifyKey
 from yarl import URL
 
-from .common import Account, BankTransaction, PaginatedResponse
-from .enums import AccountOrder, BankOrder, NodeType, TransactionOrder, UrlProtocol
+from .common import Account, BankTransaction, Block, PaginatedResponse
+from .enums import (
+    AccountOrder,
+    BankOrder,
+    BlockOrder,
+    NodeType,
+    TransactionOrder,
+    UrlProtocol,
+)
+from .errors import ValidatorFailed
 from .http import HTTPMethod, Route
-from .keypair import AnyPubKey, LocalAccount, key_as_str
-from .schemas import AccountSchema, BankConfig, BankDetails, BankTransactionSchema
+from .keypair import key_as_str
+from .schemas import (
+    AccountSchema,
+    BankConfig,
+    BankDetails,
+    BankTransactionSchema,
+    BlockSchema,
+)
 from .utils import message_to_bytes
-from .validation import ArgsManager, transform
-from .validator import Validator
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping, Optional
+    from typing import Any, Optional
 
+    from nacl.signing import VerifyKey
+
+    from .keypair import AnyPubKey, LocalAccount
+    from .payment import TransactionBlock
     from .state import InternalState
+    from .validator import Validator
 
 
 _log = logging.getLogger(__name__)
@@ -102,21 +115,54 @@ class Bank:
         node_type: NodeType,
         primary_validator: Optional[Validator],
     ):
-        self.account_number_bytes = account_number.encode(encoder=HexEncoder)
-        self.account_number = self.account_number_bytes.decode("utf-8")
-        self._account_number = account_number
+        self.node_type = node_type
+        assert (
+            node_type == NodeType.bank
+        ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
 
         self.node_identifier_bytes = node_identifier.encode(encoder=HexEncoder)
         self.node_identifier = self.node_identifier_bytes.decode("utf-8")
         self._node_identifier = node_identifier
 
+        self._primary_validator = primary_validator
+
+        self._state = state
+
+        self._update(
+            account_number=account_number,
+            ip_address=ip_address,
+            port=port,
+            protocol=protocol,
+            version=version,
+            default_transaction_fee=default_transaction_fee,
+            primary_validator=primary_validator,
+        )
+
+    def _update(
+        self,
+        *,
+        account_number: VerifyKey,
+        ip_address: URL,
+        port: Optional[int] = None,
+        protocol: UrlProtocol,
+        version: str,
+        default_transaction_fee: int,
+        primary_validator: Optional[Validator] = None,
+        **kwargs,
+    ):
+
+        node_type = kwargs.get("node_type")
+        if node_type is not None:
+            assert (
+                node_type == NodeType.bank
+            ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
+
+        self.account_number_bytes = account_number.encode(encoder=HexEncoder)
+        self.account_number = self.account_number_bytes.decode("utf-8")
+        self._account_number = account_number
+
         self.version = version  # TODO: int-tuple for version
         self.transaction_fee = default_transaction_fee
-
-        self.node_type = node_type
-        assert (
-            node_type == NodeType.bank
-        ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
 
         self.ip_address = str(ip_address)
         self.port = port
@@ -129,8 +175,6 @@ class Bank:
         )
 
         self._primary_validator = primary_validator
-
-        self._state = state
 
     @property
     def primary_validator(self):
@@ -280,8 +324,8 @@ class Bank:
 
         result = await self._request(route, json=payload)
 
-        with ArgsManager.temp(Account, bank_id=self.node_identifier):
-            account = transform(AccountSchema, result)
+        data = AccountSchema.transform(result)
+        account = self._state.create_account(dict(**data, bank_id=self.node_identifier))
 
         return account
 
@@ -292,7 +336,7 @@ class Bank:
         limit: Optional[int] = None,
         ordering: TransactionOrder = TransactionOrder.block_created,
         page_limit: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> PaginatedResponse[BankTransaction]:
         """
         Request a list of transactions a bank is aware of.
@@ -317,14 +361,14 @@ class Bank:
         page_limit: :class:`int`
             Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
-        filter_sender: Optional[:class:`str`]
-            An account number as a string. Filters results based on sender account number
+        filter_sender: Optional[:ref:`AnyPubKey`]
+            An account number. Filters results based on sender account number
 
         filter_fee: Optional[Union[:class:`NodeType`, :class:`str`]]
             A fee type as a string or ``NodeType``. Filters results based on fee.
 
-        filter_recipient: Optional[:class:`str`]
-            An account number as a string. Filters results based on recipient account number
+        filter_recipient: Optional[:ref:`AnyPubKey`]
+            An account number. Filters results based on recipient account number
 
         Raises
         ------
@@ -347,7 +391,23 @@ class Bank:
         """
         payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
 
-        _, url = Route(HTTPMethod.get, "banks").resolve(self.address)
+        if kwargs.get("filter_sender") is not None:
+            payload["block__sender"] = key_as_str(kwargs.pop("filter_sender"))
+
+        if kwargs.get("filter_fee") is not None:
+            fee = kwargs.pop("filter_fee")
+            if isinstance(fee, Enum):
+                fee = fee.value
+
+            payload["fee"] = fee
+
+        if kwargs.get("filter_recipient") is not None:
+            payload["recipient"] = key_as_str(kwargs.pop("filter_recipient"))
+
+        if kwargs.get("filter_account") is not None:
+            payload["account_number"] = key_as_str(kwargs.pop("filter_account"))
+
+        _, url = Route(HTTPMethod.get, "bank_transactions").resolve(self.address)
 
         paginator = PaginatedResponse(
             self._state,
@@ -465,7 +525,7 @@ class Bank:
         Returns
         -------
         :class:`.Bank`
-            The new account with trust updated.
+            The new bank with trust updated.
         """
         payload = {"trust": trust}
 
@@ -486,3 +546,110 @@ class Bank:
         bank = self._state.create_bank(new_data)
 
         return bank
+
+    async def fetch_blocks(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: BlockOrder = BlockOrder.created,
+        page_limit: int = 100,
+        **kwargs: Any,
+    ) -> PaginatedResponse[Block]:
+        """
+        Request a list of blocks a bank is aware of.
+
+        Returns an async iterator over ``Block`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many accounts to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of accounts to return.
+
+        ordering: :class:`.BlockOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
+
+        filter_sender: Optional[:ref:`AnyPubKey`]
+            An account number as a string. Filters results based on sender account number
+
+        Raises
+        ------
+        ~aiotnb.Forbidden
+            The server did not allow access to this endpoint.
+
+        ~aiotnb.NotFound
+            The endpoint URL was not present on the server.
+
+        ~aiotnb.NetworkServerError
+            The server encountered an error.
+
+        ~aiotnb.HTTPException
+            Something else went wrong.
+
+        Yields
+        ------
+        :class:`.Block`
+            Block information.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        if kwargs.get("filter_sender") is not None:
+            payload["sender"] = key_as_str(kwargs.pop("filter_sender"))
+
+        _, url = Route(HTTPMethod.get, "blocks").resolve(self.address)
+
+        paginator = PaginatedResponse(self._state, BlockSchema, Block, url, limit=limit, params=payload)
+
+        return paginator
+
+    async def _add_block(self, block: TransactionBlock) -> Block:
+        """
+        Send a new block of transactions to a bank to be verified and added to the chain.
+
+        Parameters
+        ----------
+        block: :class:`TransactionBlock`
+            The transaction data to add to the chain.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the block signature.
+
+        ~aiotnb.Forbidden
+            The server did not allow access to this endpoint.
+
+        ~aiotnb.NotFound
+            The endpoint URL was not present on the server.
+
+        ~aiotnb.NetworkServerError
+            The server encountered an error.
+
+        ~aiotnb.HTTPException
+            Something else went wrong.
+
+        Returns
+        -------
+        :class:`.Block`
+            The new block that was added.
+        """
+        payload = block.finalize()
+
+        route = Route(HTTPMethod.post, "blocks")
+
+        result = await self._request(route, json=payload)
+
+        new_data = BlockSchema.transform(result)
+        new_block = self._state.create_block(new_data)
+
+        return new_block

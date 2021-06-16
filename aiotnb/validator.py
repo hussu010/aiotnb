@@ -12,17 +12,16 @@ import logging
 from typing import TYPE_CHECKING
 
 from nacl.encoding import HexEncoder
-from nacl.signing import VerifyKey
-from yarl import URL
 
-from .common import Account, PaginatedResponse
-from .enums import AccountOrder, NodeType, UrlProtocol
-from .http import HTTPClient, HTTPMethod, Route
-from .schemas import AccountSchema, BankConfig
-from .validation import transform
+from .enums import NodeType
+from .errors import ValidatorFailed
+from .http import HTTPMethod, Route
 
 if TYPE_CHECKING:
-    from typing import Any, List, Mapping, Optional
+    from typing import Any, Optional
+
+    from nacl.signing import VerifyKey
+    from yarl import URL
 
     from .state import InternalState
 
@@ -36,8 +35,15 @@ class Validator:
 
     """
 
+    transaction_fee: int
+    account_number: str
+    node_type: NodeType
+
     def __init__(self, state: InternalState, *, node_identifier: VerifyKey, **kwargs):
         self._state = state
 
         # TODO
         self.node_identifier_bytes = node_identifier.encode(encoder=HexEncoder)
+
+    def _update(self, **kwargs):
+        pass

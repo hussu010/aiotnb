@@ -71,7 +71,7 @@ Sometimes you may want to convert a key to a nice, readable string.
 
 Keys can be a few different types, and aiotnb includes a type alias to refer to all of them.
 
-.. _type_anypubkey:
+.. _AnyPubKey:
 
 .. important::
     ``AnyPubKey`` is an alias for Union[:class:`nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]

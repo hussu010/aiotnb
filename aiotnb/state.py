@@ -50,7 +50,9 @@ class InternalState:
         await self.client.close()
 
     def get_creator(self, type_: T) -> Optional[CreatorFn[T]]:
-        type_name = type_.__name__.lower()
+        type_name: str = type_.__name__.lower()
+
+        self._creators: dict[str, CreatorFn[T]]
 
         if type_name in self._creators:
             return self._creators[type_name]
@@ -58,12 +60,18 @@ class InternalState:
     # Creator methods
 
     # TODO IMPORTANT: handle updating of data while still returning cached object
+    #   [x] bank
+    #   [x] validator
+    #   [x] account
 
     def create_bank(self, data) -> Bank:
         node_id = data["node_identifier"].encode(encoder=HexEncoder)
 
         if node_id in self._nodes:
-            return self._nodes[node_id]
+            bank = self._nodes[node_id]
+            bank._update(**data)
+
+            return bank
 
         else:
             validator = self.create_validator(data["primary_validator"])
@@ -78,7 +86,11 @@ class InternalState:
         node_id = data["node_identifier"].encode(encoder=HexEncoder)
 
         if node_id in self._nodes:
-            return self._nodes[node_id]
+            validator = self._nodes[node_id]
+
+            validator._update(**data)
+
+            return validator
 
         else:
             validator = Validator(self, **data)
@@ -90,7 +102,10 @@ class InternalState:
         account_key = data["id"], data["bank_id"]
 
         if account_key in self._accounts:
-            return self._accounts[account_key]
+            account = self._accounts[account_key]
+
+            account._update(**data)
+            return account
 
         else:
             account = Account(**data)
@@ -105,7 +120,7 @@ class InternalState:
             return self._transactions[tx_key]
 
         else:
-            block = self.create_block(**data["block"])
+            block = self.create_block(data["block"])
             data["block"] = block
 
             tx = BankTransaction(**data)

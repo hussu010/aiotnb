@@ -10,7 +10,7 @@ __all__ = ()
 
 import inspect
 import logging
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from typing import Any, Awaitable, Callable, Mapping, Union
@@ -56,11 +56,11 @@ def partial(fn: Callable[..., R], *args: ..., **kwargs: ...) -> Callable[..., R]
     return inner
 
 
-async def coerce_fn(fn: Union[Callable[P, R], Callable[P, Awaitable[R]]], *args: P.args, **kwargs: P.kwargs) -> R:
+async def coerce_fn(fn: Union[Callable[P, Awaitable[Any]], Callable[P, Any]], *args: P.args, **kwargs: P.kwargs) -> Any:
     x = fn(*args, **kwargs)
 
     if inspect.isawaitable(x):
-        return cast(R, await x)
+        return await x
 
     else:
-        return cast(R, x)
+        return x

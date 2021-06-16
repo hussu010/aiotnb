@@ -247,4 +247,4 @@ async def connect_to_validator(
 
     data = await client.request(route)
 
-    return Validator()
+    return Validator()  # type: ignore
