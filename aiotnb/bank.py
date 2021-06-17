@@ -199,6 +199,9 @@ class Bank:
     def _request(self, route: Route, **kwargs):
         return self._state.client.request(route.resolve(self.address), **kwargs)
 
+    async def close_session(self):
+        await self._state.close()
+
     # Endpoint methods
 
     async def fetch_accounts(
@@ -234,17 +237,8 @@ class Bank:
 
         Raises
         ------
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to list accounts failed.
 
         Yields
         ------
@@ -292,17 +286,8 @@ class Bank:
         ~aiotnb.Unauthorized
             The server did not accept the message signature.
 
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to update the account failed.
 
         Returns
         -------
@@ -372,17 +357,8 @@ class Bank:
 
         Raises
         ------
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to list transactions failed.
 
         Yields
         ------
@@ -454,17 +430,8 @@ class Bank:
 
         Raises
         ------
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to list banks failed.
 
         Yields
         ------
@@ -510,17 +477,8 @@ class Bank:
         ~aiotnb.Unauthorized
             The server did not accept the message signature.
 
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to update the bank failed.
 
         Returns
         -------
@@ -584,17 +542,8 @@ class Bank:
 
         Raises
         ------
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to list blocks failed.
 
         Yields
         ------
@@ -626,17 +575,8 @@ class Bank:
         ~aiotnb.Unauthorized
             The server did not accept the block signature.
 
-        ~aiotnb.Forbidden
-            The server did not allow access to this endpoint.
-
-        ~aiotnb.NotFound
-            The endpoint URL was not present on the server.
-
-        ~aiotnb.NetworkServerError
-            The server encountered an error.
-
         ~aiotnb.HTTPException
-            Something else went wrong.
+            The request to add a block failed.
 
         Returns
         -------

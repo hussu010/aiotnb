@@ -47,3 +47,6 @@ class Validator:
 
     def _update(self, **kwargs):
         pass
+
+    async def close_session(self):
+        await self._state.close()
