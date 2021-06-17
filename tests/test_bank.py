@@ -4,6 +4,8 @@ The MIT License (MIT)
 Copyright (c) 2021 AnonymousDapper
 """
 
+from datetime import datetime
+
 import pytest
 
 from aiotnb import Bank, connect_to_bank
@@ -41,3 +43,13 @@ async def test_fetch_banks(bank: Bank):
     banks = await banks.flatten()
 
     assert banks[0].node_identifier == bank.node_identifier
+
+
+async def test_clean_status(bank: Bank):
+    c_stat, c_time = await bank.clean_status()
+
+    if c_stat is not None:
+        assert isinstance(c_stat, str)
+
+    if c_time is not None:
+        assert isinstance(c_time, datetime)

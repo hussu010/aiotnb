@@ -140,3 +140,14 @@ AccountSchema = Schema(
         "trust": Key(float),
     }
 )
+
+
+CleanSchema = Schema(
+    {
+        "clean_last_completed": Maybe(Timestamp),
+        "clean_status": Maybe(str),
+        "ip_address": Url,
+        "port": Maybe(int),
+        "protocol": Key(UrlProtocol),
+    }
+)

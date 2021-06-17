@@ -34,14 +34,17 @@ from .schemas import (
     BankDetails,
     BankTransactionSchema,
     BlockSchema,
+    CleanSchema,
 )
 from .utils import message_to_bytes
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from datetime import datetime
+    from typing import Any, Optional, Tuple
 
     from nacl.signing import VerifyKey
 
+    from .enums import CleanCommand
     from .keypair import AnyPubKey, LocalAccount
     from .payment import TransactionBlock
     from .state import InternalState
@@ -268,7 +271,7 @@ class Bank:
 
         Parameters
         ----------
-        account_number: Union[:class:`~nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]
+        account_number: :ref:`AnyPubKey`
             The account number to edit trust for. Accepts a variety of types.
 
         trust: :class:`float`
@@ -459,7 +462,7 @@ class Bank:
 
         Parameters
         ----------
-        node_identifier: Union[:class:`~nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]
+        node_identifier: :ref:`AnyPubKey`
             The node identifier (NID) of the bank to edit trust for. Accepts a variety of types.
 
         trust: :class:`float`
@@ -593,3 +596,76 @@ class Bank:
         new_block = self._state.create_block(new_data)
 
         return new_block
+
+    async def clean_status(self) -> Tuple[Optional[str], Optional[datetime]]:
+        """
+        Request information about the last clean this node ran.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The clean status request failed.
+
+        Returns
+        -------
+        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+            A two-tuple containing the clean status and last clean time, if present. If no clean has been run, this is ``(None, None)``.
+        """
+
+        route = Route(HTTPMethod.get, "clean")
+
+        result = await self._request(route)
+
+        good_data = CleanSchema.transform(result)
+
+        return (good_data["clean_status"], good_data["clean_last_completed"])
+
+    async def manage_clean(
+        self, command: CleanCommand, node_keypair: LocalAccount
+    ) -> Tuple[Optional[str], Optional[datetime]]:
+        """
+        Start or stop a clean job on a node. You need the node's signing key to do this.
+
+        Parameters
+        ----------
+        command: :class:`.CleanCommand`
+            An enum value corresponding to the action you wish to run on the node.
+
+        node_keypair: :class:`.LocalAccount`
+            The keypair corresponding to the specific bank.
+
+            .. note::
+
+                This must be the **node's** public key and the **node's** private key.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.HTTPException
+            The request to manage a clean job failed.
+
+        Returns
+        -------
+        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+            A two-tuple containing the clean status and last clean time, if present. If no clean has been run, this is ``(None, None)``.
+        """
+        payload = {"clean": command.value}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.post, "clean")
+
+        result = await self._request(route, json=payload)
+
+        good_data = CleanSchema.transform(result)
+
+        return (good_data["clean_status"], good_data["clean_last_completed"])

@@ -6,7 +6,16 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("AccountOrder", "TransactionOrder", "BankOrder", "BlockOrder", "UrlProtocol", "NodeType")
+__all__ = (
+    "AccountOrder",
+    "TransactionOrder",
+    "BankOrder",
+    "BlockOrder",
+    "UrlProtocol",
+    "NodeType",
+    "CleanCommand",
+    "CleanStatus",
+)
 
 import logging
 from enum import Enum
@@ -100,3 +109,12 @@ class NodeType(Enum):
     primary_validator = "PRIMARY_VALIDATOR"
     confirmation_validator = "CONFIRMATION_VALIDATOR"
     none = ""
+
+
+class CleanCommand(Enum):
+    start = "start"
+    stop = "stop"
+
+
+class CleanStatus(Enum):  # TODO: figure out possible responses
+    active = "cleaning"
