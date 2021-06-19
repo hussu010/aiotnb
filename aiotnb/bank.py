@@ -669,3 +669,26 @@ class Bank:
         good_data = CleanSchema.transform(result)
 
         return (good_data["clean_status"], good_data["clean_last_completed"])
+
+    async def fetch_config(self) -> Bank:
+        """
+        Updates this bank object from node config data.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The config data request failed.
+
+        Returns
+        -------
+        :class:`.Bank`
+            This object with updated information.
+        """
+
+        route = Route(HTTPMethod.get, "config")
+
+        data = await self._request((route))
+
+        new_data = BankConfig.transform(data)
+
+        return self._state.create_bank(new_data)

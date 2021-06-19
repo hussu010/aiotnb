@@ -20,6 +20,12 @@ async def test_node_cache(bank: Bank):
     assert bank.node_identifier_bytes == new_bank.node_identifier_bytes
 
 
+async def test_node_cache_2(bank: Bank):
+    new_bank = await bank.fetch_config()
+
+    assert bank.node_identifier_bytes == new_bank.node_identifier_bytes
+
+
 async def test_primary_validator_fetch(bank: Bank):
     assert bank.primary_validator is not None
 
