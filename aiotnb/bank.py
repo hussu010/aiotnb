@@ -271,7 +271,7 @@ class Bank:
 
         Parameters
         ----------
-        account_number: :ref:`AnyPubKey`
+        account_number: :ref:`AnyPubKey <anypubkey>`
             The account number to edit trust for. Accepts a variety of types.
 
         trust: :class:`float`
@@ -349,13 +349,13 @@ class Bank:
         page_limit: :class:`int`
             Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
-        filter_sender: Optional[:ref:`AnyPubKey`]
+        filter_sender: Optional[:ref:`AnyPubKey <anypubkey>`]
             An account number. Filters results based on sender account number
 
         filter_fee: Optional[Union[:class:`NodeType`, :class:`str`]]
             A fee type as a string or ``NodeType``. Filters results based on fee.
 
-        filter_recipient: Optional[:ref:`AnyPubKey`]
+        filter_recipient: Optional[:ref:`AnyPubKey <anypubkey>`]
             An account number. Filters results based on recipient account number
 
         Raises
@@ -462,7 +462,7 @@ class Bank:
 
         Parameters
         ----------
-        node_identifier: :ref:`AnyPubKey`
+        node_identifier: :ref:`AnyPubKey <anypubkey>`
             The node identifier (NID) of the bank to edit trust for. Accepts a variety of types.
 
         trust: :class:`float`
@@ -540,7 +540,7 @@ class Bank:
         page_limit: :class:`int`
             Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
-        filter_sender: Optional[:ref:`AnyPubKey`]
+        filter_sender: Optional[:ref:`AnyPubKey <anypubkey>`]
             An account number as a string. Filters results based on sender account number
 
         Raises

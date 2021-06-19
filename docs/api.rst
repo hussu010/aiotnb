@@ -71,7 +71,7 @@ Sometimes you may want to convert a key to a nice, readable string.
 
 Keys can be a few different types, and aiotnb includes a type alias to refer to all of them.
 
-.. _AnyPubKey:
+.. _anypubkey:
 
 .. important::
     ``AnyPubKey`` is an alias for Union[:class:`nacl.signing.VerifyKey`, :class:`bytes`, :class:`str`]
@@ -195,80 +195,30 @@ Some API endpoints return data in a series of pages marked by offsets. To make u
 Enumerations
 -------------
 
-.. class:: UrlProtocol
+.. autoclass:: AccountOrder()
+    :members:
+
+.. autoclass:: TransactionOrder()
+    :members:
+
+.. autoclass:: BankOrder()
+    :members:
+
+.. autoclass:: BlockOrder()
+    :members:
+
+.. autoclass:: UrlProtocol()
+    :members:
     
-    Specifies the URL scheme to use for a given node connection.
-
-    .. attribute:: http
-
-        Use regular HTTP.
-
-    .. attribute:: https
-
-        Use secure HTTPS.
-
-
-.. class:: NodeType
-
-    Specifies the type of a given node.
-
-    .. attribute:: bank
-
-        Signifies a Bank node.
-
-    .. attribute:: primary_validator
-
-        Signifies a Validator node acting as a PV.
-
-    .. attribute:: confirmation_validator
-
-        Signifies a Validator node acting as a CV.
-
-
-.. class:: AccountOrder
-
-    Specifies results ordering for an accounts endpoint request.
-
-    .. attribute:: created_asc
-
-        Sort accounts by created dated.
-
-    .. attribute:: created_desc
-
-        Sort accounts by created date, descending.
-
-    .. attribute:: modified_asc
-
-        Sort accounts by modified date.
-
-    .. attribute:: modified_desc
-
-        Sort accounts by modified date, descending.
-
-    .. attribute:: id_asc
-
-        Sort accounts by account ID.
-
-    .. attribute:: id_desc
-
-        Sort accounts by account ID, descending.
-
-    .. attribute:: number_asc
-
-        Sort accounts by account number.
-
-    .. attribute:: number_desc
-
-        Sort accounts by account_number, descending.
-
-    .. attribute:: trust_asc
-
-        Sort accounts by trust.
-
-    .. attribute:: trust_desc
-
-        Sort accounts by trust, descending.
-
+.. autoclass:: NodeType()
+    :members:
+    
+.. autoclass:: CleanCommand()
+    :members:
+    
+.. autoclass:: CleanStatus()
+    :members:
+    
 
 
 

@@ -228,7 +228,7 @@ class BankTransaction:
         self.id = id
         self.block = block
         self.amount = amount
-        self.fee_paid_to = None if fee == NodeType.none else fee
+        self.fee_paid_to = None if fee == NodeType._none else fee
         self.memo = memo
 
         self.recipient_bytes = recipient.encode(encoder=HexEncoder)

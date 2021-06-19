@@ -504,3 +504,8 @@ div.injected div.rst-versions span.rst-current-version .fa {
 code.literal {
   background: transparent;
 }
+
+/* Hide enum attribute values because autoclass is too stupid to do it for us */
+#enumerations dl dd dl dt em.property {
+  display:  none;
+}

@@ -365,7 +365,7 @@ def key_as_str(key: AnyPubKey) -> str:
 
     Parameters
     ----------
-    key: :ref:`AnyPubKey`
+    key: :ref:`AnyPubKey <anypubkey>`
         The account number of the keypair to validate.
 
     Returns
