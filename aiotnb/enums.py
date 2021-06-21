@@ -11,6 +11,7 @@ __all__ = (
     "TransactionOrder",
     "BankOrder",
     "BlockOrder",
+    "ConfirmationBlockOrder",
     "UrlProtocol",
     "NodeType",
     "CleanCommand",
@@ -159,6 +160,37 @@ class BlockOrder(Enum):
     signature = "signature"
     #: Sort blocks by signature, descending.
     signature_desc = "-signature"
+
+
+class ConfirmationBlockOrder(Enum):
+    """
+    Controls result ordering for a confirmation block list request.
+    """
+
+    #: Sort confirmation blocks by created date.
+    created = "created_date"
+    #: Sort confirmation blocks by created date, descending.
+    created_desc = "-created_date"
+    #: Sort confirmation blocks by modified date.
+    modified = "modified_date"
+    #: Sort confirmation blocks by modified date, descending.
+    modified_desc = "-modified_date"
+    #: Sort confirmation blocks by ID.
+    id = "id"
+    #: Sort confirmation blocks by ID, descending.
+    id_desc = "-id"
+    #: Sort confirmation blocks by original block ID.
+    block = "block"
+    #: Sort confirmation blocks by original block ID, descending.
+    block_desc = "-block"
+    #: Sort confirmation blocks by validator.
+    validator = "validator"
+    #: Sort confirmation blocks by validator, descending.
+    validator_desc = "-validator"
+    #: Sort confirmation blocks by block ID.
+    block_identifier = "block_identifier"
+    #: Sort confirmation blocks by block ID, descending.
+    block_identifier_desc = "-block_identifier"
 
 
 class UrlProtocol(Enum):

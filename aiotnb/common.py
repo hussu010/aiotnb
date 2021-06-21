@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Account", "Block", "BankTransaction", "PaginatedResponse")
+__all__ = ("Account", "Block", "BankTransaction", "ConfirmationBlock", "PaginatedResponse")
 
 import asyncio
 import logging
@@ -139,14 +139,14 @@ class Block:
         "id",
         "created",
         "modified",
-        "balance_key",
         "balance_key_bytes",
-        "sender",
-        "sender_bytes",
-        "signature",
-        "signature_bytes",
+        "balance_key",
         "_balance_key",
+        "sender_bytes",
+        "sender",
         "_sender_key",
+        "signature_bytes",
+        "signature",
     )
 
     def __init__(
@@ -240,6 +240,67 @@ class BankTransaction:
 
     def __repr__(self):
         return f"<BankTransaction(id={self.id})>"
+
+
+class ConfirmationBlock:
+    """
+    Represents a confirmed block on the TNB blockchain.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        Unique identifier for this block.
+
+    created: :class:`datetime.datetime`
+        Date when this block was created.
+
+    modified: :class:`datetime.datetime`
+        Date when this block was last modified.
+
+    block_identifier: :class:`str`
+        The identifier of the underlying block.
+
+    block: :class:`str`
+        A unique identifier referring to the block. (TODO: what is the difference in these??)
+
+    validator: :class:`str`
+        ??? Some other identifier for a validator? (TODO: more info)
+    """
+
+    __slots__ = (
+        "id",
+        "created",
+        "modified",
+        "block",
+        "validator",
+        "block_identifier_bytes",
+        "block_identifier",
+        "_block_identifier_key",
+    )
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        block_identifier: VerifyKey,
+        block: str,
+        validator: str,
+    ):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+        self.block = block
+        self.validator = validator
+
+        self.block_identifier_bytes = block_identifier.encode(encoder=HexEncoder)
+        self.block_identifier = self.block_identifier_bytes.decode("utf-8")
+
+        self._block_identifier_key = block_identifier
+
+    def __repr__(self):
+        return f"<ConfirmationBlock(id={self.id})>"
 
 
 T = TypeVar("T")

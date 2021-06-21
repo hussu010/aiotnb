@@ -144,3 +144,4 @@ aiotnb.sublime-workspace
 proposals/
 pyrightconfig.json
 .vscode
+tokei.toml

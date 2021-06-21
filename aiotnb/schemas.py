@@ -17,6 +17,7 @@ __all__ = (
     "BankDetails",
     "BlockSchema",
     "BankTransactionSchema",
+    "ConfirmationBlockSchema",
     "AccountSchema",
 )
 
@@ -128,6 +129,17 @@ BlockSchema = Schema(
 
 BankTransactionSchema = Schema(
     {"id": str, "block": BlockSchema, "amount": int, "fee": Key(NodeType), "memo": str, "recipient": PublicKey}
+)
+
+ConfirmationBlockSchema = Schema(
+    {
+        "id": str,
+        "created_date": Timestamp,
+        "modified_date": Timestamp,
+        "block_identifier": PublicKey,
+        "block": str,
+        "validator": str,
+    }
 )
 
 

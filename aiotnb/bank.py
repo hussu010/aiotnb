@@ -16,11 +16,18 @@ from typing import TYPE_CHECKING
 from nacl.encoding import HexEncoder
 from yarl import URL
 
-from .common import Account, BankTransaction, Block, PaginatedResponse
+from .common import (
+    Account,
+    BankTransaction,
+    Block,
+    ConfirmationBlock,
+    PaginatedResponse,
+)
 from .enums import (
     AccountOrder,
     BankOrder,
     BlockOrder,
+    ConfirmationBlockOrder,
     NodeType,
     TransactionOrder,
     UrlProtocol,
@@ -35,6 +42,7 @@ from .schemas import (
     BankTransactionSchema,
     BlockSchema,
     CleanSchema,
+    ConfirmationBlockSchema,
 )
 from .utils import message_to_bytes
 
@@ -692,3 +700,57 @@ class Bank:
         new_data = BankConfig.transform(data)
 
         return self._state.create_bank(new_data)
+
+    async def fetch_confirmation_blocks(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: ConfirmationBlockOrder = ConfirmationBlockOrder.created,
+        page_limit: int = 100,
+        **kwargs: Any,
+    ) -> PaginatedResponse[ConfirmationBlock]:
+        """
+        Request a list of confirmation blocks a bank is aware of.
+
+        Returns an async iterator over ``ConfirmationBlock`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many accounts to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of accounts to return.
+
+        ordering: :class:`.ConfirmationBlockOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The request to list confirmation blocks failed.
+
+        Yields
+        ------
+        :class:`.ConfirmationBlock`
+            Block information.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        _, url = Route(HTTPMethod.get, "confirmation_blocks").resolve(self.address)
+
+        paginator = PaginatedResponse(
+            self._state, ConfirmationBlockSchema, ConfirmationBlock, url, limit=limit, params=payload
+        )
+
+        return paginator
+
+    # TODO: POST /confirmation_blocks
