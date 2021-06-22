@@ -16,6 +16,8 @@ __all__ = (
     "NodeType",
     "CleanCommand",
     "CleanStatus",
+    "CrawlCommand",
+    "CrawlStatus",
 )
 
 import logging
@@ -236,3 +238,23 @@ class CleanStatus(Enum):  # TODO: figure out possible responses
 
     #: Node is currently cleaning.
     active = "cleaning"
+
+
+class CrawlCommand(Enum):
+    """
+    Specifies a command to send to a crawl endpoint.
+    """
+
+    #: Start crawling.
+    start = "start"
+    #: Stop crawling.
+    stop = "stop"
+
+
+class CrawlStatus(Enum):  # TODO: figure out possible responses
+    """
+    Represents the status of a node crawl.
+    """
+
+    #: Node is currently crawling.
+    active = "crawling"

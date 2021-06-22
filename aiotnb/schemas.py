@@ -19,6 +19,8 @@ __all__ = (
     "BankTransactionSchema",
     "ConfirmationBlockSchema",
     "AccountSchema",
+    "CleanSchema",
+    "CrawlSchema",
 )
 
 from datetime import datetime
@@ -158,6 +160,16 @@ CleanSchema = Schema(
     {
         "clean_last_completed": Maybe(Timestamp),
         "clean_status": Maybe(str),
+        "ip_address": Url,
+        "port": Maybe(int),
+        "protocol": Key(UrlProtocol),
+    }
+)
+
+CrawlSchema = Schema(
+    {
+        "crawl_last_completed": Maybe(Timestamp),
+        "crawl_status": Maybe(str),
         "ip_address": Url,
         "port": Maybe(int),
         "protocol": Key(UrlProtocol),

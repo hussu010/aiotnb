@@ -43,6 +43,7 @@ from .schemas import (
     BlockSchema,
     CleanSchema,
     ConfirmationBlockSchema,
+    CrawlSchema,
 )
 from .utils import message_to_bytes
 
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
 
     from nacl.signing import VerifyKey
 
-    from .enums import CleanCommand
+    from .enums import CleanCommand, CrawlCommand
     from .keypair import AnyPubKey, LocalAccount
     from .payment import TransactionBlock
     from .state import InternalState
@@ -754,3 +755,76 @@ class Bank:
         return paginator
 
     # TODO: POST /confirmation_blocks
+
+    async def crawl_status(self) -> Tuple[Optional[str], Optional[datetime]]:
+        """
+        Request information about the last crawl this node ran.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The crawl status request failed.
+
+        Returns
+        -------
+        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+            A two-tuple containing the crawl status and last crawl time, if present. If no crawl has been run, this is ``(None, None)``.
+        """
+
+        route = Route(HTTPMethod.get, "crawl")
+
+        result = await self._request(route)
+
+        good_data = CleanSchema.transform(result)
+
+        return (good_data["crawl_status"], good_data["crawl_last_completed"])
+
+    async def manage_crawl(
+        self, command: CrawlCommand, node_keypair: LocalAccount
+    ) -> Tuple[Optional[str], Optional[datetime]]:
+        """
+        Start or stop a crawl job on a node. You need the node's signing key to do this.
+
+        Parameters
+        ----------
+        command: :class:`.CrawlCommand`
+            An enum value corresponding to the action you wish to run on the node.
+
+        node_keypair: :class:`.LocalAccount`
+            The keypair corresponding to the specific bank.
+
+            .. note::
+
+                This must be the **node's** public key and the **node's** private key.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.HTTPException
+            The request to manage a crawl job failed.
+
+        Returns
+        -------
+        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+            A two-tuple containing the crawl status and last crawl time, if present. If no crawl has been run, this is ``(None, None)``.
+        """
+        payload = {"crawl": command.value}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.post, "crawl")
+
+        result = await self._request(route, json=payload)
+
+        good_data = CleanSchema.transform(result)
+
+        return (good_data["crawl_status"], good_data["crawl_last_completed"])

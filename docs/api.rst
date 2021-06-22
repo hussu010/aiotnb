@@ -184,7 +184,7 @@ Some API endpoints return data in a series of pages marked by offsets. To make u
 
     .. method:: filter(predicate)
 
-        Also does basically the same thing as the builtin filter, and returns another async iterator including every element that satisfies ``predicate``. This function can also be a coroutine.
+        Also does basically the same thing as the builtin filter, and returns another async iterator yielding every element that satisfies ``predicate``. This function can also be a coroutine.
 
         :param predicate: Check function to apply to every element.
         :rtype: AsyncIterator
@@ -217,6 +217,12 @@ Enumerations
     :members:
     
 .. autoclass:: CleanStatus()
+    :members:
+
+.. autoclass:: CrawlCommand()
+    :members:
+
+.. autoclass:: CrawlStatus()
     :members:
     
 
