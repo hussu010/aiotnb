@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from typing import List, Union
 
     from .bank import Bank
-    from .keypair import AnyPubKey, LocalAccount
+    from .keypair import AnyPubKey, Keypair
     from .validator import Validator
 
 _log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class FeePayment(_PaymentTransaction):
 
 
 class TransactionBlock:
-    def __init__(self, keypair: LocalAccount, balance_key: VerifyKey):
+    def __init__(self, keypair: Keypair, balance_key: VerifyKey):
         self.keypair = keypair
 
         self.balance_key = key_as_str(balance_key)

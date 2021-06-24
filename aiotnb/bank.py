@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from nacl.signing import VerifyKey
 
     from .enums import CleanCommand, CrawlCommand
-    from .keypair import AnyPubKey, LocalAccount
+    from .keypair import AnyPubKey, Keypair
     from .payment import TransactionBlock
     from .state import InternalState
     from .validator import Validator
@@ -277,7 +277,7 @@ class Bank:
 
         return paginator
 
-    async def set_account_trust(self, account_number: AnyPubKey, trust: float, node_keypair: LocalAccount) -> Account:
+    async def set_account_trust(self, account_number: AnyPubKey, trust: float, node_keypair: Keypair) -> Account:
         """
         Update the trust measure this bank has for a given account. You need this bank's signing key to do this.
 
@@ -468,7 +468,7 @@ class Bank:
 
         return paginator
 
-    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: LocalAccount) -> Bank:
+    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> Bank:
         """
         Update the trust measure this bank has for a given bank. You need this bank's signing key to do this.
 
@@ -633,7 +633,7 @@ class Bank:
         return (good_data["clean_status"], good_data["clean_last_completed"])
 
     async def manage_clean(
-        self, command: CleanCommand, node_keypair: LocalAccount
+        self, command: CleanCommand, node_keypair: Keypair
     ) -> Tuple[Optional[str], Optional[datetime]]:
         """
         Start or stop a clean job on a node. You need the node's signing key to do this.
@@ -783,7 +783,7 @@ class Bank:
         return (good_data["crawl_status"], good_data["crawl_last_completed"])
 
     async def manage_crawl(
-        self, command: CrawlCommand, node_keypair: LocalAccount
+        self, command: CrawlCommand, node_keypair: Keypair
     ) -> Tuple[Optional[str], Optional[datetime]]:
         """
         Start or stop a crawl job on a node. You need the node's signing key to do this.

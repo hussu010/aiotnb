@@ -30,7 +30,7 @@ _log = logging.getLogger(__name__)
 AnyPubKey = Union[VerifyKey, bytes, str]
 
 
-class LocalAccount:
+class Keypair:
     """
     Represents a local keypair account.
 
@@ -89,7 +89,7 @@ class LocalAccount:
         self.account_number = self.account_number_bytes.decode("utf-8")
 
     @classmethod
-    def from_key_file(cls, key_file: Union[Path, str]) -> LocalAccount:
+    def from_key_file(cls, key_file: Union[Path, str]) -> Keypair:
         """
         Load an account from an existing private key file.
 
@@ -136,7 +136,7 @@ class LocalAccount:
         return cls(signing_key)
 
     @classmethod
-    def generate(cls) -> LocalAccount:
+    def generate(cls) -> Keypair:
         """
         Generates a new keypair and load an account from it.
 
@@ -149,7 +149,7 @@ class LocalAccount:
         return cls(SigningKey.generate())
 
     @classmethod
-    def from_hex_string(cls, key: str) -> LocalAccount:
+    def from_hex_string(cls, key: str) -> Keypair:
         """
         Load an account from an existing private key as a hex-encoded string.
 
@@ -307,7 +307,7 @@ class LocalAccount:
         return verified_message
 
     def __eq__(self, other: object):
-        if not isinstance(other, LocalAccount):
+        if not isinstance(other, Keypair):
             return NotImplemented
 
         return self._sign_key == other._sign_key and self._verify_key == other._verify_key

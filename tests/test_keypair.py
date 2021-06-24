@@ -10,10 +10,10 @@ import pytest
 from nacl.encoding import HexEncoder
 from nacl.signing import SignedMessage
 
-from aiotnb.keypair import LocalAccount, is_valid_keypair
+from aiotnb.keypair import Keypair, is_valid_keypair
 
-keypair_1 = LocalAccount.generate()
-keypair_2 = LocalAccount.generate()
+keypair_1 = Keypair.generate()
+keypair_2 = Keypair.generate()
 
 MESSAGE = b"THIS IS-A TEST[!@]"
 stored_message = None
@@ -23,7 +23,7 @@ def test_write_load(tmp_path):
     output = tmp_path / "private_1.key"
     keypair_1.write_key_file(output)
 
-    test_keypair_1 = LocalAccount.from_key_file(output)
+    test_keypair_1 = Keypair.from_key_file(output)
 
     assert test_keypair_1 == keypair_1
 

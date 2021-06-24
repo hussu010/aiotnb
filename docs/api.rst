@@ -51,9 +51,9 @@ See the TNB `Confirmation Validator API <https://thenewboston.com/confirmation-v
 Keypair  Management
 ~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: LocalAccount
+.. attributetable:: Keypair
 
-.. autoclass:: LocalAccount
+.. autoclass:: Keypair
     :members:
 
 
