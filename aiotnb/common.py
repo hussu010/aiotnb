@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Account", "Block", "BankTransaction", "ConfirmationBlock", "PaginatedResponse")
+__all__ = ("Account", "Block", "BankTransaction", "ConfirmationBlock", "InvalidBlock", "PaginatedResponse")
 
 import asyncio
 import logging
@@ -301,6 +301,74 @@ class ConfirmationBlock:
 
     def __repr__(self):
         return f"<ConfirmationBlock(id={self.id})>"
+
+
+class InvalidBlock:
+    """
+    Represents a invalid block on the TNB blockchain.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        Unique identifier for this block.
+
+    created: :class:`datetime.datetime`
+        Date when this block was created.
+
+    modified: :class:`datetime.datetime`
+        Date when this block was last modified.
+
+    block_identifier: :class:`str`
+        The identifier of the underlying block.
+
+    block: :class:`str`
+        A unique identifier referring to the block. (TODO: what is the difference in these??)
+
+    confirmation_validator: :class:`str`
+        CV identifer (TODO: info)
+
+    primary_validator: :class:`str`
+        ??? Some other identifier for a PV? (TODO: more info)
+    """
+
+    __slots__ = (
+        "id",
+        "created",
+        "modified",
+        "block",
+        "confirmation_validator",
+        "primary_validator",
+        "block_identifier_bytes",
+        "block_identifier",
+        "_block_identifier_key",
+    )
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        block_identifier: VerifyKey,
+        block: str,
+        confirmation_validator: str,
+        primary_validator: str,
+    ):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+        self.block = block
+
+        self.confirmation_validator = confirmation_validator
+        self.primary_validator = primary_validator
+
+        self.block_identifier_bytes = block_identifier.encode(encoder=HexEncoder)
+        self.block_identifier = self.block_identifier_bytes.decode("utf-8")
+
+        self._block_identifier_key = block_identifier
+
+    def __repr__(self):
+        return f"<InvalidBlock(id={self.id})>"
 
 
 T = TypeVar("T")

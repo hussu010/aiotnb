@@ -12,6 +12,7 @@ __all__ = (
     "BankOrder",
     "BlockOrder",
     "ConfirmationBlockOrder",
+    "InvalidBlockOrder",
     "UrlProtocol",
     "NodeType",
     "CleanCommand",
@@ -192,6 +193,41 @@ class ConfirmationBlockOrder(Enum):
     #: Sort confirmation blocks by block ID.
     block_identifier = "block_identifier"
     #: Sort confirmation blocks by block ID, descending.
+    block_identifier_desc = "-block_identifier"
+
+
+class InvalidBlockOrder(Enum):
+    """
+    Controls result ordering for an invalid block list request.
+    """
+
+    #: Sort blocks by created date.
+    created = "created_date"
+    #: Sort blocks by created date, descending.
+    created_desc = "-created_date"
+    #: Sort blocks by modified date.
+    modified = "modified_date"
+    #: Sort blocks by modified date, descending.
+    modified_desc = "-modified_date"
+    #: Sort blocks by ID.
+    id = "id"
+    #: Sort blocks by ID, descending.
+    id_desc = "-id"
+    #: Sort blocks by original block ID.
+    block = "block"
+    #: Sort blocks by original block ID, descending.
+    block_desc = "-block"
+    #: Sort blocks by CV.
+    confirmation_validator = "confirmation_validator"
+    #: Sort blocks by CV, descending.
+    confirmation_validator_desc = "-confirmation_validator"
+    #: Sort blocks by PV.
+    primary_validator = "primary_validator"
+    #: Sort blocks by PV, descending.
+    primary_validator_desc = "-primary_validator"
+    #: Sort blocks by block ID.
+    block_identifier = "block_identifier"
+    #: Sort blocks by block ID, descending.
     block_identifier_desc = "-block_identifier"
 
 

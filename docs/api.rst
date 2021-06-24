@@ -132,6 +132,22 @@ Block
 .. autoclass:: Block()
     :members:
 
+Confirmation Block
+~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationBlock
+
+.. autoclass:: ConfirmationBlock()
+    :members:
+
+Invalid Block
+~~~~~~~~~~~~~~
+
+.. attributetable:: InvalidBlock
+
+.. autoclass:: InvalidBlock()
+    :members:
+
 Async Iterator
 --------------------
 
@@ -205,6 +221,12 @@ Enumerations
     :members:
 
 .. autoclass:: BlockOrder()
+    :members:
+
+.. autoclass:: ConfirmationBlockOrder()
+    :members:
+
+.. autoclass:: InvalidBlockOrder()
     :members:
 
 .. autoclass:: UrlProtocol()

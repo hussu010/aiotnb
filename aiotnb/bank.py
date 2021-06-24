@@ -21,6 +21,7 @@ from .common import (
     BankTransaction,
     Block,
     ConfirmationBlock,
+    InvalidBlock,
     PaginatedResponse,
 )
 from .enums import (
@@ -28,6 +29,7 @@ from .enums import (
     BankOrder,
     BlockOrder,
     ConfirmationBlockOrder,
+    InvalidBlockOrder,
     NodeType,
     TransactionOrder,
     UrlProtocol,
@@ -44,6 +46,7 @@ from .schemas import (
     CleanSchema,
     ConfirmationBlockSchema,
     CrawlSchema,
+    InvalidBlockSchema,
 )
 from .utils import message_to_bytes
 
@@ -347,10 +350,10 @@ class Bank:
         Parameters
         ----------
         offset: :class:`int`
-            Determines how many accounts to skip before returning data.
+            Determines how many transactions to skip before returning data.
 
         limit: :class:`int`
-            Determines the maximum number of accounts to return.
+            Determines the maximum number of transactions to return.
 
         ordering: :class:`.AccountOrder`
             Determines in what order the results are returned.
@@ -429,10 +432,10 @@ class Bank:
         Parameters
         ----------
         offset: :class:`int`
-            Determines how many accounts to skip before returning data.
+            Determines how many banks to skip before returning data.
 
         limit: :class:`int`
-            Determines the maximum number of accounts to return.
+            Determines the maximum number of banks to return.
 
         ordering: :class:`.BankOrder`
             Determines in what order the results are returned.
@@ -538,10 +541,10 @@ class Bank:
         Parameters
         ----------
         offset: :class:`int`
-            Determines how many accounts to skip before returning data.
+            Determines how many blocks to skip before returning data.
 
         limit: :class:`int`
-            Determines the maximum number of accounts to return.
+            Determines the maximum number of blocks to return.
 
         ordering: :class:`.BlockOrder`
             Determines in what order the results are returned.
@@ -723,10 +726,10 @@ class Bank:
         Parameters
         ----------
         offset: :class:`int`
-            Determines how many accounts to skip before returning data.
+            Determines how many blocks to skip before returning data.
 
         limit: :class:`int`
-            Determines the maximum number of accounts to return.
+            Determines the maximum number of blocks to return.
 
         ordering: :class:`.ConfirmationBlockOrder`
             Determines in what order the results are returned.
@@ -828,3 +831,55 @@ class Bank:
         good_data = CleanSchema.transform(result)
 
         return (good_data["crawl_status"], good_data["crawl_last_completed"])
+
+    async def fetch_invalid_blocks(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: InvalidBlockOrder = InvalidBlockOrder.created,
+        page_limit: int = 100,
+        **kwargs: Any,
+    ) -> PaginatedResponse[InvalidBlock]:
+        """
+        Request a list of invalid blocks a bank is aware of.
+
+        Returns an async iterator over ``InvalidBlock`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many blocks to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of blocks to return.
+
+        ordering: :class:`.InvalidBlockOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The request to list invalid blocks failed.
+
+        Yields
+        ------
+        :class:`.InvalidBlock`
+            Block information.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        _, url = Route(HTTPMethod.get, "invalid_blocks").resolve(self.address)
+
+        paginator = PaginatedResponse(self._state, InvalidBlockSchema, InvalidBlock, url, limit=limit, params=payload)
+
+        return paginator
+
+        # TODO: POST /invalid_blocks

@@ -59,3 +59,10 @@ async def test_clean_status(bank: Bank):
 
     if c_time is not None:
         assert isinstance(c_time, datetime)
+
+
+@pytest.mark.xfail(strict=True)
+async def test_invalid_blocks_empty(bank: Bank):
+    iv_block_iter = await bank.fetch_invalid_blocks()
+
+    await iv_block_iter.next()
