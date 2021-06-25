@@ -6,6 +6,8 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+from attr import dataclass
+
 __all__ = ("Bank",)
 
 import asyncio
@@ -52,7 +54,7 @@ from .utils import message_to_bytes
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from typing import Any, Optional, Tuple
+    from typing import Any, Optional, Tuple, Union
 
     from nacl.signing import VerifyKey
 
@@ -289,7 +291,7 @@ class Bank:
         trust: :class:`float`
             The new trust value for the account.
 
-        node_keypair: :class:`.LocalAccount`
+        node_keypair: :class:`.Keypair`
             The keypair corresponding to the specific bank.
 
             .. note::
@@ -480,7 +482,7 @@ class Bank:
         trust: :class:`float`
             The new trust value for the bank.
 
-        node_keypair: :class:`.LocalAccount`
+        node_keypair: :class:`.Keypair`
             The keypair corresponding to the specific bank.
 
             .. note::
@@ -643,7 +645,7 @@ class Bank:
         command: :class:`.CleanCommand`
             An enum value corresponding to the action you wish to run on the node.
 
-        node_keypair: :class:`.LocalAccount`
+        node_keypair: :class:`.Keypair`
             The keypair corresponding to the specific bank.
 
             .. note::
@@ -793,7 +795,7 @@ class Bank:
         command: :class:`.CrawlCommand`
             An enum value corresponding to the action you wish to run on the node.
 
-        node_keypair: :class:`.LocalAccount`
+        node_keypair: :class:`.Keypair`
             The keypair corresponding to the specific bank.
 
             .. note::
@@ -883,3 +885,93 @@ class Bank:
         return paginator
 
         # TODO: POST /invalid_blocks
+
+    async def connect_to_node(
+        self,
+        address: Union[URL, str],
+        node_keypair: Keypair,
+        *,
+        port: Optional[int] = None,
+        protocol: Optional[Union[UrlProtocol, str]] = None,
+    ) -> bool:
+        """
+        Send a connection request to this bank node.
+
+        .. note::
+            The provided keypair should belong to the node at the given address.
+
+        Parameters
+        ----------
+        address: Union[:class:`~yarl.URL`, :class:`str`]
+            The address of the requesting node. If this is a fully-formed URL, the port and protocol will be acquired from it, if not otherwise provided.
+
+        node_keypair: :class:`.Keypair`
+            The keypair corresponding to the requesting node.
+
+        port: Optional[:class:`int`]
+            TCP port to use for the connection.
+            This defaults to the default port for the provided protocol.
+
+        protocol: Optional[Union[:class:`.UrlProtocol`, :class:`str`]]
+            The communication protocol to use for the connection.
+            If ``address`` is a fully-formed URL, this parameter is not necessary.
+
+        Raises
+        ------
+        :exc:`ValueError`
+            The parameters supplied were an incorrect configuration.
+
+        ~aiotnb.Unauthorized
+            The connection request signature was invalid.
+
+        ~aiotnb.HTTPException
+            The connection request failed.
+
+        Returns
+        -------
+        :class:`bool`
+            A boolean value indicating the connection request status. ``True`` if the request was accepted.
+        """
+
+        node_address = URL(address)
+
+        if not node_address.host:
+            raise ValueError(f"Expected a host in URL: {node_address}")
+
+        if protocol is not None:
+            if not isinstance(protocol, UrlProtocol):
+                try:
+                    protocol = UrlProtocol(protocol)
+
+                except:
+                    raise ValueError(f"Unknown protocol: {protocol}")
+
+            node_address = node_address.with_scheme(UrlProtocol.value)
+
+        if port is not None:
+            # if port is None here, it resets to default for scheme (thanks yarl)
+            node_address = node_address.with_port(port)
+
+        message = {"ip_address": node_address.host, "port": node_address.port, "protocol": node_address.scheme}
+
+        data = message_to_bytes(message)
+        signed = node_keypair.sign_message(data)
+
+        payload = {
+            "message": message,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.post, "connection_requests")
+
+        result = await self._request(route, json=payload)
+
+        _log.debug(f"Connection request got {result!r}")
+
+        if result == {}:
+            return True
+
+        # TODO: other failure cases here
+
+        return False

@@ -6,7 +6,7 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("LocalAccount", "is_valid_keypair", "key_as_str", "AnyPubKey")
+__all__ = ("Keypair", "is_valid_keypair", "key_as_str", "AnyPubKey")
 
 import logging
 from pathlib import Path
