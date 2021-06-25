@@ -149,13 +149,13 @@ class Keypair:
         return cls(SigningKey.generate())
 
     @classmethod
-    def from_hex_string(cls, key: str) -> Keypair:
+    def from_hex(cls, key: Union[str, bytes]) -> Keypair:
         """
-        Load an account from an existing private key as a hex-encoded string.
+        Load an account from an existing private key as a hex-encoded string or bytes.
 
         Parameters
         ----------
-        key: :class:`str`
+        key: Union[:class:`str`, :class:`bytes`]
             The key to load.
 
         Raises
@@ -168,8 +168,11 @@ class Keypair:
         :class:`LocalAccount`
             A new account object.
         """
+        if isinstance(key, str):
+            key = key.encode(encoding="utf-8")
+
         try:
-            return cls(SigningKey(key.encode(), encoder=HexEncoder))
+            return cls(SigningKey(key, encoder=HexEncoder))
         except Exception as e:
             _log.error("private key load failed")
             raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e

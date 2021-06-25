@@ -53,7 +53,7 @@ Keypair  Management
 
 .. attributetable:: Keypair
 
-.. autoclass:: Keypair
+.. autoclass:: Keypair()
     :members:
 
 
