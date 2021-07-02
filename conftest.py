@@ -35,7 +35,7 @@ async def client():
 
 @pytest.fixture(scope="module")
 async def bank():
-    bank = await aiotnb.connect_to_bank("54.177.121.3")
+    bank = await aiotnb.connect_to_bank("54.183.16.194")
 
     # return bank
     yield bank

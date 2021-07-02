@@ -15,7 +15,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_node_cache(bank: Bank):
-    new_bank = await connect_to_bank("54.177.121.3")
+    new_bank = await connect_to_bank("54.183.16.194")
 
     assert bank.node_identifier_bytes == new_bank.node_identifier_bytes
 

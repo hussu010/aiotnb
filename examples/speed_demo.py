@@ -13,7 +13,7 @@ import aiotnb
 from aiotnb import connect_to_bank
 from aiotnb.models import AccountListOrder
 
-BANK_ADDRESS = "54.177.121.3"
+BANK_ADDRESS = "54.183.16.194"
 
 
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +26,7 @@ async def aiotnb_test():
 
     result = await account_iter.flatten()
 
-    await bank._client.close()
+    await bank._state.close()
 
     return result
 
