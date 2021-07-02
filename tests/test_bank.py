@@ -61,6 +61,13 @@ async def test_clean_status(bank: Bank):
         assert isinstance(c_time, datetime)
 
 
+async def test_confirmation_services(bank: Bank):
+    svcs = await bank.fetch_confirmation_services()
+    svcs = await svcs.flatten()
+
+    assert svcs
+
+
 @pytest.mark.xfail(strict=True)
 async def test_invalid_blocks_empty(bank: Bank):
     iv_block_iter = await bank.fetch_invalid_blocks()

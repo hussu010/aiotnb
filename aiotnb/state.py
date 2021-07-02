@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Type, TypeVar
 from nacl.encoding import HexEncoder
 
 from .bank import Bank
-from .common import Account, BankTransaction, Block
+from .common import Account, BankTransaction, Block, ConfirmationService
 from .validator import Validator
 
 if TYPE_CHECKING:
@@ -74,8 +74,9 @@ class InternalState:
             return bank
 
         else:
-            validator = self.create_validator(data["primary_validator"])
-            data["primary_validator"] = validator
+            if "primary_validator" in data:
+                validator = self.create_validator(data["primary_validator"])
+                data["primary_validator"] = validator
 
             bank = Bank(self, **data)
             self._nodes[bank.node_identifier_bytes] = bank
@@ -139,3 +140,6 @@ class InternalState:
             self._blockchain[block.id] = block
 
             return block
+
+    def create_confirmationservice(self, data) -> ConfirmationService:
+        return ConfirmationService(**data)

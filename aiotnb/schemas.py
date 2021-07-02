@@ -19,6 +19,7 @@ __all__ = (
     "BankTransactionSchema",
     "ConfirmationBlockSchema",
     "InvalidBlockSchema",
+    "ConfirmationServiceSchema",
     "AccountSchema",
     "CleanSchema",
     "CrawlSchema",
@@ -154,6 +155,17 @@ InvalidBlockSchema = Schema(
         "block": str,
         "confirmation_validator": str,
         "primary_validator": str,
+    }
+)
+
+ConfirmationServiceSchema = Schema(
+    {
+        "id": str,
+        "created_date": Timestamp,
+        "modified_date": Timestamp,
+        "end": Timestamp,
+        "start": Timestamp,
+        "validator": str,
     }
 )
 

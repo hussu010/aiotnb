@@ -6,8 +6,6 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-from attr import dataclass
-
 __all__ = ("Bank",)
 
 import asyncio
@@ -23,6 +21,7 @@ from .common import (
     BankTransaction,
     Block,
     ConfirmationBlock,
+    ConfirmationService,
     InvalidBlock,
     PaginatedResponse,
 )
@@ -31,6 +30,7 @@ from .enums import (
     BankOrder,
     BlockOrder,
     ConfirmationBlockOrder,
+    ConfirmationServiceOrder,
     InvalidBlockOrder,
     NodeType,
     TransactionOrder,
@@ -47,6 +47,7 @@ from .schemas import (
     BlockSchema,
     CleanSchema,
     ConfirmationBlockSchema,
+    ConfirmationServiceSchema,
     CrawlSchema,
     InvalidBlockSchema,
 )
@@ -131,6 +132,7 @@ class Bank:
         default_transaction_fee: int,
         node_type: NodeType,
         primary_validator: Optional[Validator],
+        trust: Optional[float] = None,
     ):
         self.node_type = node_type
         assert (
@@ -414,6 +416,8 @@ class Bank:
 
         return paginator
 
+    # TODO: make this return PaginatedResponse[PartialBank] instead, give upgrade method to fetch config and return actual Bank object
+
     async def fetch_banks(
         self,
         *,
@@ -555,7 +559,7 @@ class Bank:
             Determines how many results to return per page, defaults to 100. You should not have to adjust this.
 
         filter_sender: Optional[:ref:`AnyPubKey <anypubkey>`]
-            An account number as a string. Filters results based on sender account number
+            An account number. Filters results based on sender account number
 
         Raises
         ------
@@ -780,7 +784,7 @@ class Bank:
 
         result = await self._request(route)
 
-        good_data = CleanSchema.transform(result)
+        good_data = CrawlSchema.transform(result)
 
         return (good_data["crawl_status"], good_data["crawl_last_completed"])
 
@@ -975,3 +979,61 @@ class Bank:
         # TODO: other failure cases here
 
         return False
+
+    async def fetch_confirmation_services(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: ConfirmationServiceOrder = ConfirmationServiceOrder.created,
+        page_limit: int = 100,
+        **kwargs: Any,
+    ) -> PaginatedResponse[ConfirmationService]:
+        """
+        Request a list of confirmation services a bank has purchased.
+
+        Returns an async iterator over ``ConfirmationService`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many blocks to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of blocks to return.
+
+        ordering: :class:`.ConfirmationServiceOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, defaults to 100. You should not have to adjust this.
+
+        filter_validator: Optional[:ref:`AnyPubKey <anypubkey>`]
+            A node identifier. Filters results based on confirmation validator NID.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The request to list confirmation blocks failed.
+
+        Yields
+        ------
+        :class:`.ConfirmationService`
+            Service information.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        if kwargs.get("filter_validator") is not None:
+            payload["validator__node_identifier"] = key_as_str(kwargs.pop("filter_validator"))
+
+        _, url = Route(HTTPMethod.get, "validator_confirmation_services").resolve(self.address)
+
+        paginator = PaginatedResponse(
+            self._state, ConfirmationServiceSchema, ConfirmationService, url, limit=limit, params=payload
+        )
+
+        return paginator

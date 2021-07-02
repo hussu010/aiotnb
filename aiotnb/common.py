@@ -6,7 +6,15 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Account", "Block", "BankTransaction", "ConfirmationBlock", "InvalidBlock", "PaginatedResponse")
+__all__ = (
+    "Account",
+    "Block",
+    "BankTransaction",
+    "ConfirmationBlock",
+    "InvalidBlock",
+    "ConfirmationService",
+    "PaginatedResponse",
+)
 
 import asyncio
 import logging
@@ -369,6 +377,54 @@ class InvalidBlock:
 
     def __repr__(self):
         return f"<InvalidBlock(id={self.id})>"
+
+
+class ConfirmationService:
+    """
+    Represents an agreement for confirmation services for a period of time.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        Unique identifier for this service timespan.
+
+    created: :class:`datetime.datetime`
+        Date this service was created.
+
+    modified: :class:`datetime.datetime`
+        Date this service was modified.
+
+    end: :class:`datetime.datetime`
+        Date this service period ends.
+
+    start: :class:`datetime.datetime`
+        Date this service period starts.
+
+    validator: :class:`str`
+        Validator ID ?? (TODO: info)
+    """
+
+    __slots__ = ("id", "created", "modified", "end", "start", "validator")
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        end: datetime,
+        start: datetime,
+        validator: str,
+    ):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+        self.end = end
+        self.start = start
+        self.validator = validator
+
+    def __repr__(self):
+        return f"<ConfirmationService(id={self.id})>"
 
 
 T = TypeVar("T")

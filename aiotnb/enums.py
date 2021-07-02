@@ -13,6 +13,7 @@ __all__ = (
     "BlockOrder",
     "ConfirmationBlockOrder",
     "InvalidBlockOrder",
+    "ConfirmationServiceOrder",
     "UrlProtocol",
     "NodeType",
     "CleanCommand",
@@ -229,6 +230,37 @@ class InvalidBlockOrder(Enum):
     block_identifier = "block_identifier"
     #: Sort blocks by block ID, descending.
     block_identifier_desc = "-block_identifier"
+
+
+class ConfirmationServiceOrder(Enum):
+    """
+    Controls result ordering for a confirmartion service list request.
+    """
+
+    #: Sort services by created date.
+    created = "created_date"
+    #: Sort services by created date, descending.
+    created_desc = "-created_date"
+    #: Sort services by modified date.
+    modified = "modified_date"
+    #: Sort services by modified date, descending.
+    modified_desc = "-modified_date"
+    #: Sort services by ID.
+    id = "id"
+    #: Sort services by ID, descending.
+    id_desc = "-id"
+    #: Sort services by ending time.
+    end = "end"
+    #: Sort services by ending time, descending.
+    end_desc = "-end"
+    #: Sort services by starting time.
+    start = "start"
+    #: Sort services by starting time, descending.
+    start_desc = "-start"
+    #: Sort services by validator ID.
+    validator = "validator"
+    #: Sort services by validator ID, descending.
+    validator_desc = "-validator"
 
 
 class UrlProtocol(Enum):
