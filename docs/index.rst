@@ -6,7 +6,9 @@
 Welcome to aiotnb
 ==================================
 
-.. image:: /images/512px.png
+.. container:: header
+
+   .. image:: /images/banner.svg
 
 aiotnb is a simple, intuitive, and safe client for the TNB network.
 

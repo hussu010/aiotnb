@@ -509,3 +509,11 @@ code.literal {
 #enumerations dl dd dl dt em.property {
   display:  none;
 }
+
+
+/* Bump logo banner size up a bit */
+
+div.header img {
+  width:  120%;
+  margin-bottom:  2rem;
+}
