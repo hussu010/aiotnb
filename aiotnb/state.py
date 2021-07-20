@@ -18,6 +18,7 @@ from .common import (
     BankDetails,
     BankTransaction,
     Block,
+    ConfirmationBlock,
     ConfirmationService,
     ValidatorDetails,
 )
@@ -143,6 +144,18 @@ class InternalState:
 
         else:
             block = Block(**data)
+            self._blockchain[block.id] = block
+
+            return block
+
+    def create_confirmationblock(self, data) -> ConfirmationBlock:
+        block_id = data["id"]
+
+        if block_id in self._blockchain:
+            return self._blockchain[block_id]
+
+        else:
+            block = ConfirmationBlock(**data)
             self._blockchain[block.id] = block
 
             return block
