@@ -83,7 +83,7 @@ async def test_crawl_status(bank: Bank):
 
 
 @pytest.mark.xfail(strict=True)
-async def test_invalid_blocks_empty(bank: Bank):
+async def test_invalid_blocks_empty_fail(bank: Bank):
     iv_block_iter = await bank.fetch_invalid_blocks()
 
     await iv_block_iter.next()
@@ -99,6 +99,13 @@ async def test_validator_list(bank: Bank):
     vs = await bank.fetch_validators()
 
     assert await vs.next()
+
+
+@pytest.mark.xfail(strict=True)
+async def test_invalid_validator_nid_fail(bank: Bank):
+    validator = await bank.fetch_validator_by_nid("this should not exist")
+
+    assert validator
 
 
 # async def test_validator_by_nid(bank: Bank):
