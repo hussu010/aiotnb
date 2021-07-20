@@ -865,7 +865,7 @@ class Bank:
 
     # TODO: (node host library) POST /invalid_blocks
 
-    async def connect_to_node(
+    async def request_connect(
         self,
         address: Union[URL, str],
         node_keypair: Keypair,
