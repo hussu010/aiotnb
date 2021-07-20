@@ -636,7 +636,7 @@ class Bank:
 
         Returns
         -------
-        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+        Tuple[Optional[:class:`str`], Optional[:class:`datetime.datetime`]]
             A two-tuple containing the clean status and last clean time, if present. If no clean has been run, this is ``(None, None)``.
         """
         payload = {"clean": command.value}
@@ -746,7 +746,7 @@ class Bank:
 
         Returns
         -------
-        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+        Tuple[Optional[:class:`str`], Optional[:class:`datetime.datetime`]]
             A two-tuple containing the crawl status and last crawl time, if present. If no crawl has been run, this is ``(None, None)``.
         """
 
@@ -786,7 +786,7 @@ class Bank:
 
         Returns
         -------
-        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+        Tuple[Optional[:class:`str`], Optional[:class:`datetime.datetime`]]
             A two-tuple containing the crawl status and last crawl time, if present. If no crawl has been run, this is ``(None, None)``.
         """
         payload = {"crawl": command.value}

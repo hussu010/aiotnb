@@ -79,8 +79,8 @@ Keys can be a few different types, and aiotnb includes a type alias to refer to 
 .. autofunction:: key_as_str
 
 
-Models
--------
+API Models
+-----------
 
 Bank
 ~~~~~
@@ -107,6 +107,8 @@ Confirmation Validator
     :members:
 
 
+Other Models
+-------------
 
 Account
 ~~~~~~~~
@@ -124,6 +126,24 @@ Bank Transaction
 .. autoclass:: BankTransaction()
     :members:
 
+Partial Bank
+~~~~~~~~~~~~~
+This object is returned when only part of the information needed to make a connection is returned from the API.
+
+    .. attributetable:: BankDetails
+
+    .. autoclass:: BankDetails()
+        :members:
+
+Partial Validator
+~~~~~~~~~~~~~~~~~~
+This object is returned when only part of the information needed to make a connection is returned from the API.
+
+    .. attributetable:: ValidatorDetails
+
+    .. autoclass:: ValidatorDetails()
+        :members:
+
 Block
 ~~~~~~
 
@@ -138,6 +158,14 @@ Confirmation Block
 .. attributetable:: ConfirmationBlock
 
 .. autoclass:: ConfirmationBlock()
+    :members:
+
+Confirmation Service
+~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationService
+
+.. autoclass:: ConfirmationService()
     :members:
 
 Invalid Block
@@ -211,38 +239,89 @@ Some API endpoints return data in a series of pages marked by offsets. To make u
 Enumerations
 -------------
 
+Result Ordering
+~~~~~~~~~~~~~~~~
+
+Accounts
+*********
+
 .. autoclass:: AccountOrder()
     :members:
+
+Transactions
+*************
 
 .. autoclass:: TransactionOrder()
     :members:
 
+Banks
+******
+
 .. autoclass:: BankOrder()
     :members:
+
+Validators
+***********
+
+.. autoclass:: ValidatorOrder()
+    :members:
+
+Blocks
+*******
 
 .. autoclass:: BlockOrder()
     :members:
 
+Confirmation Blocks
+********************
+
 .. autoclass:: ConfirmationBlockOrder()
     :members:
+
+Confirmation Services
+**********************
+
+.. autoclass:: ConfirmationServiceOrder()
+    :members:
+
+Invalid Blocks
+***************
 
 .. autoclass:: InvalidBlockOrder()
     :members:
 
+URL Protocol
+~~~~~~~~~~~~~
+
 .. autoclass:: UrlProtocol()
     :members:
     
+Node Type
+~~~~~~~~~~
+
 .. autoclass:: NodeType()
     :members:
     
+Clean Command
+~~~~~~~~~~~~~~
+
 .. autoclass:: CleanCommand()
     :members:
     
+Clean Status
+~~~~~~~~~~~~~
+
 .. autoclass:: CleanStatus()
     :members:
 
+Crawl Command
+~~~~~~~~~~~~~~
+
 .. autoclass:: CrawlCommand()
     :members:
+
+Crawl Status
+~~~~~~~~~~~~~
 
 .. autoclass:: CrawlStatus()
     :members:

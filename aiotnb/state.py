@@ -66,11 +66,6 @@ class InternalState:
 
     # Creator methods
 
-    # TODO IMPORTANT: handle updating of data while still returning cached object
-    #   [x] bank
-    #   [x] validator
-    #   [x] account
-
     def create_bank(self, data) -> Bank:
         node_id = bytes(data["node_identifier"])
 
