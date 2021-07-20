@@ -8,11 +8,12 @@ from __future__ import annotations
 
 __all__ = (
     "Account",
-    "Block",
+    "BankDetails",
     "BankTransaction",
+    "Block",
     "ConfirmationBlock",
-    "InvalidBlock",
     "ConfirmationService",
+    "InvalidBlock",
     "PaginatedResponse",
 )
 
@@ -25,7 +26,8 @@ from nacl.signing import VerifyKey
 from yarl import URL
 
 from . import validation
-from .enums import NodeType
+from .enums import NodeType, UrlProtocol
+from .http import HTTPMethod, Route
 from .iter import _PaginatedIterator
 
 if TYPE_CHECKING:
@@ -58,9 +60,6 @@ class Account:
     account_number: :class:`str`
         This account's unique address. Also its public key.
 
-    account_number_bytes: :class:`bytes`
-        This account's number as hex-encoded bytes.
-
     trust: :class:`float`
         The trust amount assigned to this account by a given Bank. Can be different across banks.
 
@@ -74,9 +73,8 @@ class Account:
         "modified",
         "trust",
         "bank_id",
-        "account_number_bytes",
         "account_number",
-        "_public_key",
+        "_account_number",
     )
 
     def __init__(
@@ -95,9 +93,8 @@ class Account:
         self.trust = trust
         self.bank_id = bank_id
 
-        self.account_number_bytes = account_number.encode(encoder=HexEncoder)
-        self.account_number = self.account_number_bytes.decode("utf-8")
-        self._public_key = account_number
+        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self._account_number = account_number
 
     def _update(self, *, created_date: datetime, modified_date: datetime, trust: float, **kwargs):
         self.id = id
@@ -109,82 +106,97 @@ class Account:
         return f"<Account({self.account_number})>"
 
 
-class Block:
+class BankDetails:
     """
-    Represents a transaction block on the TNB network.
+    Represents a partially known bank node on the TNB network.
 
     Attributes
     ----------
-    id: :class:`str`
-        The block ID on the network.
 
-    created: :class:`datetime.datetime`
-        Date when the block was created.
+    account_number: :class:`str`
+        The account this bank uses to receive transaction fees.
 
-    modified: :class:`datetime.datetime`
-        Date when the block was last modified.
+    node_identifier: :class:`str`
+        The node identifier (NID) of this bank node.
 
-    balance_key: :class:`str`
-        Balance key for this block.
+    version: :class:`str`
+        The version identifier of this node.
 
-    balance_key_bytes: :class:`bytes`
-        Balance key for this block as hex-encoded bytes.
+    transaction_fee: :class:`int`
+        The fee this node charges for handling transactions.
 
-    sender: :class:`str`
-        Sender's account number.
+    ip_address: :class:`str`
+        The IP address of this bank node.
 
-    sender_bytes: :class:`bytes`
-        The sender's account number as hex-encoded bytes.
+    port: Optional[:class:`int`]
+        The port number this node accepts connections on.
 
-    signature: :class:`str`
-        Signature for this block.
+    protocol: :class:`.UrlProtocol`
+        An enum value representing the scheme this node handles connections with.
 
-    signature_bytes: :class:`bytes`
-        Signature for this block as hex-encoded bytes.
+    trust: :class:`float`
+        The trust amount assigned to this bank by a given bank node. Can be different across banks.
+
+    bank_id: :class:`str`
+        The node identifier (NID) of the bank this bank was received from. This is only useful when looking at bank trust.
     """
 
     __slots__ = (
-        "id",
-        "created",
-        "modified",
-        "balance_key_bytes",
-        "balance_key",
-        "_balance_key",
-        "sender_bytes",
-        "sender",
-        "_sender_key",
-        "signature_bytes",
-        "signature",
+        "account_number",
+        "_account_number",
+        "node_identifier",
+        "_node_identifier",
+        "version",
+        "transaction_fee",
+        "ip_address",
+        "port",
+        "protocol",
+        "trust",
+        "bank_id",
+        "_state",
     )
 
     def __init__(
         self,
+        _state,
         *,
-        id: str,
-        created_date: datetime,
-        modified_date: datetime,
-        balance_key: VerifyKey,
-        sender: VerifyKey,
-        signature: bytes,
+        account_number: VerifyKey,
+        node_identifier: VerifyKey,
+        version: str,
+        default_transaction_fee: int,
+        ip_address: URL,
+        port: Optional[int],
+        protocol: UrlProtocol,
+        trust: float,
+        bank_id: VerifyKey,
     ):
-        self.id = id
-        self.created = created_date
-        self.modified = modified_date
+        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self._account_number = account_number
 
-        self.signature_bytes = signature
-        self.signature = self.signature_bytes.decode("utf-8")
+        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self._node_identifier = node_identifier
 
-        self.balance_key_bytes = balance_key.encode(encoder=HexEncoder)
-        self.balance_key = self.balance_key_bytes.decode("utf-8")
+        self.version = version
+        self.transaction_fee = default_transaction_fee
+        self.ip_address = str(ip_address)
+        self.port = port
+        self.protocol = protocol
+        self.trust = trust
+        self.bank_id = bank_id
 
-        self.sender_bytes = sender.encode(encoder=HexEncoder)
-        self.sender = self.sender_bytes.decode("utf-8")
+        self._state = _state
 
-        self._balance_key = balance_key
-        self._sender_key = sender
+    async def upgrade(self):
+        url_base = URL.build(scheme=self.protocol.value, host=self.ip_address, port=self.port)
+
+        route = Route(HTTPMethod.get, "config").resolve(url_base)
+
+        data = await self._state._client.request(route)
+
+        return self._state.create_bank(data)
 
     def __repr__(self):
-        return f"<Block(id={self.id})>"
+        return f"<BankDetails(node_identifier={self.node_identifier})>"
 
 
 class BankTransaction:
@@ -211,9 +223,6 @@ class BankTransaction:
     recipient: :class:`str`
         Recipient's account number.
 
-    recipient_bytes: :class:`bytes`
-        Recipient's account number as hex-encoded bytes.
-
     bank_id: :class:`str`
         The node identifier (NID) of the bank this transaction was received from.
     """
@@ -224,9 +233,8 @@ class BankTransaction:
         "amount",
         "fee_paid_to",
         "memo",
-        "recipient_bytes",
         "recipient",
-        "_recipient_key",
+        "_recipient",
         "bank_id",
     )
 
@@ -239,15 +247,78 @@ class BankTransaction:
         self.fee_paid_to = None if fee == NodeType._none else fee
         self.memo = memo
 
-        self.recipient_bytes = recipient.encode(encoder=HexEncoder)
-        self.recipient = self.recipient_bytes.decode("utf-8")
-
-        self._recipient_key = recipient
+        self.recipient = recipient.encode(encoder=HexEncoder).decode("utf-8")
+        self._recipient = recipient
 
         self.bank_id = bank_id
 
     def __repr__(self):
         return f"<BankTransaction(id={self.id})>"
+
+
+class Block:
+    """
+    Represents a transaction block on the TNB network.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The block ID on the network.
+
+    created: :class:`datetime.datetime`
+        Date when the block was created.
+
+    modified: :class:`datetime.datetime`
+        Date when the block was last modified.
+
+    balance_key: :class:`str`
+        Balance key for this block.
+
+    sender: :class:`str`
+        Sender's account number.
+
+    signature: :class:`str`
+        Signature for this block.
+
+    """
+
+    __slots__ = (
+        "id",
+        "created",
+        "modified",
+        "balance_key",
+        "_balance_key",
+        "sender",
+        "_sender",
+        "signature",
+        "_signature",
+    )
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        balance_key: VerifyKey,
+        sender: VerifyKey,
+        signature: bytes,
+    ):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+
+        self.signature = signature.decode("utf-8")
+        self._signature = signature
+
+        self.balance_key = balance_key.encode(encoder=HexEncoder).decode("utf-8")
+        self._balance_key = balance_key
+
+        self.sender = sender.encode(encoder=HexEncoder).decode("utf-8")
+        self._sender = sender
+
+    def __repr__(self):
+        return f"<Block(id={self.id})>"
 
 
 class ConfirmationBlock:
@@ -281,9 +352,8 @@ class ConfirmationBlock:
         "modified",
         "block",
         "validator",
-        "block_identifier_bytes",
         "block_identifier",
-        "_block_identifier_key",
+        "_block_identifier",
     )
 
     def __init__(
@@ -302,81 +372,11 @@ class ConfirmationBlock:
         self.block = block
         self.validator = validator
 
-        self.block_identifier_bytes = block_identifier.encode(encoder=HexEncoder)
-        self.block_identifier = self.block_identifier_bytes.decode("utf-8")
-
-        self._block_identifier_key = block_identifier
+        self.block_identifier = block_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self._block_identifier = block_identifier
 
     def __repr__(self):
         return f"<ConfirmationBlock(id={self.id})>"
-
-
-class InvalidBlock:
-    """
-    Represents a invalid block on the TNB blockchain.
-
-    Attributes
-    ----------
-    id: :class:`str`
-        Unique identifier for this block.
-
-    created: :class:`datetime.datetime`
-        Date when this block was created.
-
-    modified: :class:`datetime.datetime`
-        Date when this block was last modified.
-
-    block_identifier: :class:`str`
-        The identifier of the underlying block.
-
-    block: :class:`str`
-        A unique identifier referring to the block. (TODO: what is the difference in these??)
-
-    confirmation_validator: :class:`str`
-        CV identifer (TODO: info)
-
-    primary_validator: :class:`str`
-        ??? Some other identifier for a PV? (TODO: more info)
-    """
-
-    __slots__ = (
-        "id",
-        "created",
-        "modified",
-        "block",
-        "confirmation_validator",
-        "primary_validator",
-        "block_identifier_bytes",
-        "block_identifier",
-        "_block_identifier_key",
-    )
-
-    def __init__(
-        self,
-        *,
-        id: str,
-        created_date: datetime,
-        modified_date: datetime,
-        block_identifier: VerifyKey,
-        block: str,
-        confirmation_validator: str,
-        primary_validator: str,
-    ):
-        self.id = id
-        self.created = created_date
-        self.modified = modified_date
-        self.block = block
-
-        self.confirmation_validator = confirmation_validator
-        self.primary_validator = primary_validator
-
-        self.block_identifier_bytes = block_identifier.encode(encoder=HexEncoder)
-        self.block_identifier = self.block_identifier_bytes.decode("utf-8")
-
-        self._block_identifier_key = block_identifier
-
-    def __repr__(self):
-        return f"<InvalidBlock(id={self.id})>"
 
 
 class ConfirmationService:
@@ -425,6 +425,71 @@ class ConfirmationService:
 
     def __repr__(self):
         return f"<ConfirmationService(id={self.id})>"
+
+
+class InvalidBlock:
+    """
+    Represents a invalid block on the TNB blockchain.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        Unique identifier for this block.
+
+    created: :class:`datetime.datetime`
+        Date when this block was created.
+
+    modified: :class:`datetime.datetime`
+        Date when this block was last modified.
+
+    block_identifier: :class:`str`
+        The identifier of the underlying block.
+
+    block: :class:`str`
+        A unique identifier referring to the block. (TODO: what is the difference in these??)
+
+    confirmation_validator: :class:`str`
+        CV identifer (TODO: info)
+
+    primary_validator: :class:`str`
+        ??? Some other identifier for a PV? (TODO: more info)
+    """
+
+    __slots__ = (
+        "id",
+        "created",
+        "modified",
+        "block",
+        "confirmation_validator",
+        "primary_validator",
+        "block_identifier",
+        "_block_identifier",
+    )
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        created_date: datetime,
+        modified_date: datetime,
+        block_identifier: VerifyKey,
+        block: str,
+        confirmation_validator: str,
+        primary_validator: str,
+    ):
+        self.id = id
+        self.created = created_date
+        self.modified = modified_date
+        self.block = block
+
+        self.confirmation_validator = confirmation_validator
+        self.primary_validator = primary_validator
+
+        self.block_identifier = block_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self._block_identifier = block_identifier
+
+    def __repr__(self):
+        return f"<InvalidBlock(id={self.id})>"
 
 
 T = TypeVar("T")

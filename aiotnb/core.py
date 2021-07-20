@@ -16,7 +16,7 @@ from yarl import URL
 from .bank import Bank
 from .confirmation_validator import ConfirmationValidator
 from .http import HTTPClient, HTTPMethod, Route
-from .schemas import BankConfig
+from .schemas import BankConfigSchema
 from .state import InternalState
 from .validation import transform
 from .validator import Validator
@@ -79,7 +79,6 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
         An object representing the bank at the specified address.
     """
 
-    # url_base = f"http{'s' if use_https else ''}://{bank_address}"
     url_base = URL.build(scheme="https" if use_https else "http", host=bank_address, port=port)
 
     connector = kwargs.get("connector")
@@ -97,7 +96,7 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     data = await client.request(route)
 
-    new_data = transform(BankConfig, data)
+    new_data = transform(BankConfigSchema, data)
 
     return state.create_bank(new_data)
 

@@ -18,6 +18,7 @@ from yarl import URL
 
 from .common import (
     Account,
+    BankDetails,
     BankTransaction,
     Block,
     ConfirmationBlock,
@@ -41,8 +42,8 @@ from .http import HTTPMethod, Route
 from .keypair import key_as_str
 from .schemas import (
     AccountSchema,
-    BankConfig,
-    BankDetails,
+    BankConfigSchema,
+    BankDetailsSchema,
     BankTransactionSchema,
     BlockSchema,
     CleanSchema,
@@ -79,14 +80,8 @@ class Bank:
     account_number: :class:`str`
         The account this bank uses to receive transaction fees.
 
-    account_number_bytes: :class:`bytes`
-        The account number of the bank node as hex-encoded bytes.
-
     node_identifier: :class:`str`
         The node identifier (NID) of this bank node.
-
-    node_identifier_bytes: :class:`bytes`
-        The NID of this bank node as hex-encoded bytes.
 
     version: :class:`str`
         The version identifier of this node.
@@ -131,17 +126,15 @@ class Bank:
         version: str,
         default_transaction_fee: int,
         node_type: NodeType,
-        primary_validator: Optional[Validator],
-        trust: Optional[float] = None,
+        primary_validator: Validator,
     ):
         self.node_type = node_type
         assert (
             node_type == NodeType.bank
         ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
 
-        self.node_identifier_bytes = node_identifier.encode(encoder=HexEncoder)
-        self.node_identifier = self.node_identifier_bytes.decode("utf-8")
         self._node_identifier = node_identifier
+        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
 
         self._primary_validator = primary_validator
 
@@ -166,7 +159,7 @@ class Bank:
         protocol: UrlProtocol,
         version: str,
         default_transaction_fee: int,
-        primary_validator: Optional[Validator] = None,
+        primary_validator: Validator,
         **kwargs,
     ):
 
@@ -174,11 +167,10 @@ class Bank:
         if node_type is not None:
             assert (
                 node_type == NodeType.bank
-            ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
+            ), f"attempt to update a Bank object with non-bank node data: {node_type.value}"
 
-        self.account_number_bytes = account_number.encode(encoder=HexEncoder)
-        self.account_number = self.account_number_bytes.decode("utf-8")
         self._account_number = account_number
+        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
 
         self.version = version  # TODO: int-tuple for version
         self.transaction_fee = default_transaction_fee
@@ -193,27 +185,7 @@ class Bank:
             port=port or 80,
         )
 
-        self._primary_validator = primary_validator
-
-    @property
-    def primary_validator(self):
-        if self._primary_validator is None:
-            # Using ensure_future here instead of create_task to allow for Python < 3.7
-            return asyncio.ensure_future(self._get_primary_validator()).result()
-
-        else:
-            return self._primary_validator
-
-    async def _get_primary_validator(self):
-        data = await self._request(Route(HTTPMethod.get, "config"))
-
-        if BankConfig.validate(data):
-            self._primary_validator = self._state.create_validator(data["primary_validator"])
-
-        else:
-            raise ValidatorFailed(f"got data: {data!r}")
-
-        return self._primary_validator
+        self.primary_validator = primary_validator
 
     def _request(self, route: Route, **kwargs):
         return self._state.client.request(route.resolve(self.address), **kwargs)
@@ -425,11 +397,11 @@ class Bank:
         limit: Optional[int] = None,
         ordering: BankOrder = BankOrder.trust_desc,
         page_limit: int = 100,
-    ) -> PaginatedResponse[Bank]:
+    ) -> PaginatedResponse[BankDetails]:
         """
         Request a list of other banks a bank is connected is aware of.
 
-        Returns an async iterator over ``Bank`` objects.
+        Returns an async iterator over ``BankDetails`` objects.
 
         .. seealso::
 
@@ -465,11 +437,12 @@ class Bank:
 
         paginator = PaginatedResponse(
             self._state,
+            BankDetailsSchema,
             BankDetails,
-            Bank,
             url,
             limit=limit,
             params=payload,
+            extra=dict(bank_id=self.node_identifier),
         )
 
         return paginator
@@ -626,7 +599,7 @@ class Bank:
 
         Returns
         -------
-        Tuple[Optional[:class:`str`], Optional[class:`datetime.datetime`]]
+        Tuple[Optional[:class:`str`], Optional[:class:`datetime.datetime`]]
             A two-tuple containing the clean status and last clean time, if present. If no clean has been run, this is ``(None, None)``.
         """
 
@@ -707,7 +680,7 @@ class Bank:
 
         data = await self._request((route))
 
-        new_data = BankConfig.transform(data)
+        new_data = BankConfigSchema.transform(data)
 
         return self._state.create_bank(new_data)
 
@@ -763,7 +736,7 @@ class Bank:
 
         return paginator
 
-    # TODO: POST /confirmation_blocks
+    # TODO: (node host library) POST /confirmation_blocks
 
     async def crawl_status(self) -> Tuple[Optional[str], Optional[datetime]]:
         """
@@ -889,6 +862,8 @@ class Bank:
         return paginator
 
         # TODO: POST /invalid_blocks
+
+    # TODO: (node host library) POST /invalid_blocks
 
     async def connect_to_node(
         self,

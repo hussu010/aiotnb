@@ -17,13 +17,13 @@ pytestmark = pytest.mark.asyncio
 async def test_node_cache(bank: Bank):
     new_bank = await connect_to_bank("54.183.16.194")
 
-    assert bank.node_identifier_bytes == new_bank.node_identifier_bytes
+    assert bank._node_identifier == new_bank._node_identifier
 
 
 async def test_node_cache_2(bank: Bank):
     new_bank = await bank.fetch_config()
 
-    assert bank.node_identifier_bytes == new_bank.node_identifier_bytes
+    assert bank._node_identifier == new_bank._node_identifier
 
 
 async def test_primary_validator_fetch(bank: Bank):

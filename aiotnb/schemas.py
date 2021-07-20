@@ -80,7 +80,7 @@ Url = Key(URL)
 
 # Main schemas
 
-BankConfig = Schema(
+BankConfigSchema = Schema(
     {
         "primary_validator": {
             "account_number": PublicKey,
@@ -107,7 +107,7 @@ BankConfig = Schema(
     }
 )
 
-BankDetails = Schema(
+BankDetailsSchema = Schema(
     {
         "account_number": PublicKey,
         "ip_address": Url,

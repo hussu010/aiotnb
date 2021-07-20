@@ -31,7 +31,7 @@ class _PaymentTransaction:
     recipient: str
 
     def _to_dict(self):
-        raise NotImplemented
+        return NotImplemented
 
 
 class Payment(_PaymentTransaction):

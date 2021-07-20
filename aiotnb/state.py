@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Type, TypeVar
 from nacl.encoding import HexEncoder
 
 from .bank import Bank
-from .common import Account, BankTransaction, Block, ConfirmationService
+from .common import Account, BankDetails, BankTransaction, Block, ConfirmationService
 from .validator import Validator
 
 if TYPE_CHECKING:
@@ -34,6 +34,7 @@ class InternalState:
         self.client = client
 
         self._nodes = {}
+        self._partial_nodes = {}
         self._accounts = {}
         self._blockchain = {}
         self._transactions = {}
@@ -65,7 +66,7 @@ class InternalState:
     #   [x] account
 
     def create_bank(self, data) -> Bank:
-        node_id = data["node_identifier"].encode(encoder=HexEncoder)
+        node_id = bytes(data["node_identifier"])
 
         if node_id in self._nodes:
             bank = self._nodes[node_id]
@@ -79,12 +80,12 @@ class InternalState:
                 data["primary_validator"] = validator
 
             bank = Bank(self, **data)
-            self._nodes[bank.node_identifier_bytes] = bank
+            self._nodes[bytes(bank._node_identifier)] = bank
 
             return bank
 
     def create_validator(self, data) -> Validator:
-        node_id = data["node_identifier"].encode(encoder=HexEncoder)
+        node_id = bytes(data["node_identifier"])
 
         if node_id in self._nodes:
             validator = self._nodes[node_id]
@@ -95,7 +96,7 @@ class InternalState:
 
         else:
             validator = Validator(self, **data)
-            self._nodes[validator.node_identifier_bytes] = validator
+            self._nodes[bytes(validator._node_identifier)] = validator
 
             return validator
 
@@ -143,3 +144,16 @@ class InternalState:
 
     def create_confirmationservice(self, data) -> ConfirmationService:
         return ConfirmationService(**data)
+
+    def create_bankdetails(self, data) -> BankDetails:
+        node_id = bytes(data["node_identifier"])
+
+        if node_id in self._partial_nodes:
+            bank = self._partial_nodes[node_id]
+            return bank
+
+        else:
+            bank = BankDetails(self, **data)
+            self._partial_nodes[bytes(bank._node_identifier)] = bank
+
+            return bank

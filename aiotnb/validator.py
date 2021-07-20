@@ -43,7 +43,8 @@ class Validator:
         self._state = state
 
         # TODO
-        self.node_identifier_bytes = node_identifier.encode(encoder=HexEncoder)
+        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self._node_identifier = node_identifier
 
     def _update(self, **kwargs):
         pass
