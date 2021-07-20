@@ -14,6 +14,7 @@ __all__ = (
     "ConfirmationBlock",
     "ConfirmationService",
     "InvalidBlock",
+    "ValidatorDetails",
     "PaginatedResponse",
 )
 
@@ -29,6 +30,7 @@ from . import validation
 from .enums import NodeType, UrlProtocol
 from .http import HTTPMethod, Route
 from .iter import _PaginatedIterator
+from .schemas import BankDetailsSchema, ValidatorDetailsSchema
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -191,9 +193,9 @@ class BankDetails:
 
         route = Route(HTTPMethod.get, "config").resolve(url_base)
 
-        data = await self._state._client.request(route)
+        data = await self._state.client.request(route)
 
-        return self._state.create_bank(data)
+        return self._state.create_bank(BankDetailsSchema.transform(data))
 
     def __repr__(self):
         return f"<BankDetails(node_identifier={self.node_identifier})>"
@@ -490,6 +492,131 @@ class InvalidBlock:
 
     def __repr__(self):
         return f"<InvalidBlock(id={self.id})>"
+
+
+class ValidatorDetails:
+    """
+    Represents a partially known validator node on the TNB network.
+
+    Attributes
+    ----------
+
+    account_number: :class:`str`
+        The account this bank uses to receive transaction fees.
+
+    node_identifier: :class:`str`
+        The node identifier (NID) of this bank node.
+
+    version: :class:`str`
+        The version identifier of this node.
+
+    transaction_fee: :class:`int`
+        The fee this node charges for handling transactions.
+
+    ip_address: :class:`str`
+        The IP address of this bank node.
+
+    port: Optional[:class:`int`]
+        The port number this node accepts connections on.
+
+    protocol: :class:`.UrlProtocol`
+        An enum value representing the scheme this node handles connections with.
+
+    trust: :class:`float`
+        The trust amount assigned to this bank by a given bank node. Can be different across banks.
+
+    bank_id: :class:`str`
+        The node identifier (NID) of the bank this bank was received from. This is only useful when looking at bank trust.
+
+    root_account_file: :class:`~yarl.URL`
+        URL pointing to the root account file (RAF) for this validator.
+
+    root_account_file_hash: :class:`str`
+        Hash of this validator's RAF as a hex-encoded string.
+
+    seed_block_identifier: :class:`str`
+        ???
+
+    daily_confirmations: :class:`int`
+        Number of confirmations per day this validator processes.
+    """
+
+    __slots__ = (
+        "account_number",
+        "_account_number",
+        "node_identifier",
+        "_node_identifier",
+        "version",
+        "transaction_fee",
+        "ip_address",
+        "port",
+        "protocol",
+        "trust",
+        "bank_id",
+        "root_account_file",
+        "root_account_file_hash",
+        "_root_account_file_hash",
+        "seed_block_identifier",
+        "daily_confirmations",
+        "_state",
+    )
+
+    def __init__(
+        self,
+        _state,
+        *,
+        account_number: VerifyKey,
+        node_identifier: VerifyKey,
+        version: str,
+        default_transaction_fee: int,
+        ip_address: URL,
+        port: Optional[int],
+        protocol: UrlProtocol,
+        trust: float,
+        bank_id: VerifyKey,
+        root_account_file: URL,
+        root_account_file_hash: bytes,
+        seed_block_identifier: str,
+        daily_confirmation_rate: int,
+    ):
+        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self._account_number = account_number
+
+        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self._node_identifier = node_identifier
+
+        self.version = version
+        self.transaction_fee = default_transaction_fee
+        self.ip_address = str(ip_address)
+        self.port = port
+        self.protocol = protocol
+        self.trust = trust
+        self.bank_id = bank_id
+
+        self.root_account_file = root_account_file
+        self.root_account_file_hash = root_account_file_hash.hex()
+        self._root_account_file_hash = root_account_file_hash
+
+        self.seed_block_identifier = seed_block_identifier
+        self.daily_confirmations = daily_confirmation_rate
+
+        self._state = _state
+
+    async def upgrade(self):
+        # TODO (Validator milestone) Make this use ValidatorConfig
+
+        raise NotImplementedError()
+
+        url_base = URL.build(scheme=self.protocol.value, host=self.ip_address, port=self.port)
+
+        route = Route(HTTPMethod.get, "config").resolve(url_base)
+
+        data = await self._state.client.request(route)
+
+        return self._state.create_validator(ValidatorDetailsSchema.transform(data))
+
+    def __repr__(self):
+        return f"<ValidatorDetails(node_identifier={self.node_identifier})>"
 
 
 T = TypeVar("T")

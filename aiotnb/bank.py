@@ -25,6 +25,7 @@ from .common import (
     ConfirmationService,
     InvalidBlock,
     PaginatedResponse,
+    ValidatorDetails,
 )
 from .enums import (
     AccountOrder,
@@ -36,8 +37,9 @@ from .enums import (
     NodeType,
     TransactionOrder,
     UrlProtocol,
+    ValidatorOrder,
 )
-from .errors import ValidatorFailed
+from .errors import HTTPException, ValidatorFailed
 from .http import HTTPMethod, Route
 from .keypair import key_as_str
 from .schemas import (
@@ -51,6 +53,7 @@ from .schemas import (
     ConfirmationServiceSchema,
     CrawlSchema,
     InvalidBlockSchema,
+    ValidatorDetailsSchema,
 )
 from .utils import message_to_bytes
 
@@ -266,11 +269,7 @@ class Bank:
             The new trust value for the account.
 
         node_keypair: :class:`.Keypair`
-            The keypair corresponding to the specific bank.
-
-            .. note::
-
-                This must be the **bank's** public key and the **bank's** private key.
+            This bank's keypair..
 
         Raises
         ------
@@ -388,8 +387,6 @@ class Bank:
 
         return paginator
 
-    # TODO: make this return PaginatedResponse[PartialBank] instead, give upgrade method to fetch config and return actual Bank object
-
     async def fetch_banks(
         self,
         *,
@@ -447,7 +444,7 @@ class Bank:
 
         return paginator
 
-    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> Bank:
+    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> BankDetails:
         """
         Update the trust measure this bank has for a given bank. You need this bank's signing key to do this.
 
@@ -460,11 +457,11 @@ class Bank:
             The new trust value for the bank.
 
         node_keypair: :class:`.Keypair`
-            The keypair corresponding to the specific bank.
+            This bank's keypair.
 
             .. note::
 
-                This must be the **bank's** public key and the **bank's** private key.
+                This must be the **main** bank's key pair, not the keypair for the bank being edited.
 
         Raises
         ------
@@ -476,8 +473,8 @@ class Bank:
 
         Returns
         -------
-        :class:`.Bank`
-            The new bank with trust updated.
+        :class:`.BankDetails`
+            The new partial bank with trust updated.
         """
         payload = {"trust": trust}
 
@@ -494,8 +491,8 @@ class Bank:
 
         result = await self._request(route, json=payload)
 
-        new_data = AccountSchema.transform(result)
-        bank = self._state.create_bank(new_data)
+        new_data = BankDetailsSchema.transform(result)
+        bank = self._state.create_bankdetails(new_data)
 
         return bank
 
@@ -678,7 +675,7 @@ class Bank:
 
         route = Route(HTTPMethod.get, "config")
 
-        data = await self._request((route))
+        data = await self._request(route)
 
         new_data = BankConfigSchema.transform(data)
 
@@ -1012,3 +1009,192 @@ class Bank:
         )
 
         return paginator
+
+    async def notify_upgrade(self, node_identifier: AnyPubKey, node_keypair: Keypair) -> bool:
+        """
+        Notify a bank of a validator promotion.
+
+        Parameters
+        ----------
+        node_identifier: :ref:`AnyPubKey <anypubkey>`
+            The node identifier (NID) of the bank to notify. Accepts a variety of types.
+
+        node_keypair: :class:`.Keypair`
+            The validator's keypair.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.HTTPException
+            The request to notify the bank failed.
+
+        Returns
+        -------
+        :class:`bool`
+            ``True`` if the bank will switch over, ``False`` if the bank is staying on its existing network.
+        """
+        payload = {"bank_node_identifier": key_as_str(node_identifier)}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.patch, "upgrade_notice")
+
+        try:
+            result = await self._request(route, json=payload)
+
+            # TODO: better solution for this
+            assert result == {}, f"Non-empty response: {result!r}"
+
+        except HTTPException as e:
+            if e.response.status == 400:  # this is a "correct" response for this endpoint
+                return False
+
+            else:
+                raise e
+
+        return True
+
+    async def fetch_validators(
+        self,
+        *,
+        offset: int = 0,
+        limit: Optional[int] = None,
+        ordering: ValidatorOrder = ValidatorOrder.trust_desc,
+        page_limit: int = 100,
+    ) -> PaginatedResponse[ValidatorDetails]:
+        """
+        Request a list of validators a bank is connected to.
+
+        Returns an async iterator over ``ValidatorDetails`` objects.
+
+        .. seealso::
+
+            For details about the iterator, see :class:`AsyncIterator`.
+
+        Parameters
+        ----------
+        offset: :class:`int`
+            Determines how many validators to skip before returning data.
+
+        limit: :class:`int`
+            Determines the maximum number of validators to return.
+
+        ordering: :class:`.ValidatorOrder`
+            Determines in what order the results are returned.
+
+        page_limit: :class:`int`
+            Determines how many results to return per page, max of 100. You should not have to adjust this.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The request to list validators failed.
+
+        Yields
+        ------
+        :class:`.ValidatorDetails`
+            Partial validator object.
+        """
+        payload = {"offset": offset, "limit": page_limit, "ordering": ordering.value}
+
+        _, url = Route(HTTPMethod.get, "validators").resolve(self.address)
+
+        paginator = PaginatedResponse(
+            self._state,
+            ValidatorDetailsSchema,
+            ValidatorDetails,
+            url,
+            limit=limit,
+            params=payload,
+            extra=dict(bank_id=self.node_identifier),
+        )
+
+        return paginator
+
+    async def fetch_validator_by_nid(self, node_identifier: AnyPubKey) -> ValidatorDetails:
+        """
+        Request a connected validator by its node identifier.
+
+        Parameters
+        ----------
+        node_identifier: :ref:`AnyPubKey <anypubkey>`
+            The node identifier (NID) of the requested validator. Accepts a variety of types.
+
+        Raises
+        ------
+        ~aiotnb.HTTPException
+            The request to list validators failed.
+
+        ~aiotnb.NotFound
+            The requested validator NID was not present.
+
+        Returns
+        ------
+        :class:`.ValidatorDetails`
+            Partial validator object.
+        """
+
+        route = Route(HTTPMethod.get, "validators/{validator_nid}", validator_nid=key_as_str(node_identifier))
+
+        data = await self._request(route)
+
+        validator_data = ValidatorDetailsSchema.transform(data)
+
+        return self._state.create_validatordetails({**validator_data, "bank_id": self.node_identifier})
+
+    async def set_validator_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> Bank:
+        """
+        Update the trust measure this bank has for a given validator. You need this bank's signing key to do this.
+
+        Parameters
+        ----------
+        node_identifier: :ref:`AnyPubKey <anypubkey>`
+            The node identifier (NID) of the validator to edit trust for. Accepts a variety of types.
+
+        trust: :class:`float`
+            The new trust value for the validator.
+
+        node_keypair: :class:`.Keypair`
+            The bank's keypair.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.HTTPException
+            The request to update the validator failed.
+
+        Returns
+        -------
+        :class:`.ValidatorDetails`
+            The new validator with trust updated.
+        """
+        payload = {"trust": trust}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.decode("utf-8"),
+        }
+
+        route = Route(HTTPMethod.patch, "banks/{node_identifier}", node_identifier=key_as_str(node_identifier))
+
+        result = await self._request(route, json=payload)
+
+        new_data = AccountSchema.transform(result)
+        bank = self._state.create_bank(new_data)
+
+        return bank

@@ -14,6 +14,7 @@ __all__ = (
     "ConfirmationBlockOrder",
     "InvalidBlockOrder",
     "ConfirmationServiceOrder",
+    "ValidatorOrder",
     "UrlProtocol",
     "NodeType",
     "CleanCommand",
@@ -261,6 +262,65 @@ class ConfirmationServiceOrder(Enum):
     validator = "validator"
     #: Sort services by validator ID, descending.
     validator_desc = "-validator"
+
+
+class ValidatorOrder(Enum):
+    """
+    Controls result ordering for a validator list request.
+    """
+
+    #: Sort validators by account number.
+    account_number = "account_number"
+    #: Sort validators by account number, descending.
+    account_number_desc = "-account_number"
+    #: Sort validators by confirmation rate.
+    daily_confirmation_rate = "daily_confirmation_rate"
+    #: Sort validators by confirmation rate, descending.
+    daily_confirmation_rate_desc = "-daily_confirmation_rate"
+    #: Sort validators by TX fee.
+    default_transaction_fee = "default_transaction_fee"
+    #: Sort validators by TX fee, descending.
+    default_transaction_fee_desc = "-default_transaction_fee"
+    #: Sort validators by ID.
+    id = "id"
+    #: Sort validators by ID, descending.
+    id_desc = "-id"
+    #: Sort validators by IP address.
+    ip_address = "ip_address"
+    #: Sort validators by IP address, descending.
+    ip_address_desc = "-ip_address"
+    #: Sort validators by node identifier.
+    node_identifier = "node_identifier"
+    #: Sort validators by node identifier, descending.
+    node_identifier_desc = "-node_identifier"
+    #: Sort validators by port.
+    port = "port"
+    #: Sort validators by port, descending.
+    port_desc = "-port"
+    #: Sort validators by URL protocol.
+    protocol = "protocol"
+    #: Sort validators by URL protocol, descending.
+    protocol_desc = "-protocol"
+    #: Sort validators by root account file.
+    root_account_file = "root_account_file"
+    #: Sort validators by root account file, descending.
+    root_account_file_desc = "-root_account_file"
+    #: Sort validators by root account file hash.
+    root_account_file_hash = "root_account_file_hash"
+    #: Sort validators by root account file hash, descending.
+    root_account_file_hash_desc = "-root_account_file_hash"
+    #: Sort validators by seed block identifier.
+    seed_block_identifier = "seed_block_identifier"
+    #: Sort validators by seed block identifier, descending.
+    seed_block_identifier_desc = "-seed_block_identifier"
+    #: Sort validators by trust.
+    trust = "trust"
+    #: Sort validators by trust, descending.
+    trust_desc = "-trust"
+    #: Sort validators by version.
+    version = "version"
+    #: Sort validators by version, descending.
+    version_desc = "-version"
 
 
 class UrlProtocol(Enum):

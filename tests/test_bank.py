@@ -73,3 +73,15 @@ async def test_invalid_blocks_empty(bank: Bank):
     iv_block_iter = await bank.fetch_invalid_blocks()
 
     await iv_block_iter.next()
+
+
+async def test_validator_list(bank: Bank):
+    vs = await bank.fetch_validators()
+
+    assert await vs.next()
+
+
+# async def test_validator_by_nid(bank: Bank):
+#     v = await bank.fetch_validator_by_nid(b"9375feb25085c6f2a58640404e7c16582e210a6a12717c8d3d5307f750c861fc")
+
+#     assert v

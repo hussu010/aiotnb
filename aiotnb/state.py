@@ -12,10 +12,15 @@ import inspect
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Type, TypeVar
 
-from nacl.encoding import HexEncoder
-
 from .bank import Bank
-from .common import Account, BankDetails, BankTransaction, Block, ConfirmationService
+from .common import (
+    Account,
+    BankDetails,
+    BankTransaction,
+    Block,
+    ConfirmationService,
+    ValidatorDetails,
+)
 from .validator import Validator
 
 if TYPE_CHECKING:
@@ -157,3 +162,16 @@ class InternalState:
             self._partial_nodes[bytes(bank._node_identifier)] = bank
 
             return bank
+
+    def create_validatordetails(self, data) -> ValidatorDetails:
+        node_id = bytes(data["node_identifier"])
+
+        if node_id in self._partial_nodes:
+            validator = self._partial_nodes[node_id]
+            return validator
+
+        else:
+            validator = ValidatorDetails(self, **data)
+            self._partial_nodes[bytes(validator._node_identifier)] = validator
+
+            return validator

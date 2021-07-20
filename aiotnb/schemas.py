@@ -13,6 +13,7 @@ __all__ = (
     "Timestamp",
     "Signature",
     "Url",
+    "ValidatorDetailsSchema",
     "BankConfig",
     "BankDetails",
     "BlockSchema",
@@ -32,7 +33,6 @@ from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
 from yarl import URL
 
-from .common import Account, BankTransaction, Block
 from .enums import NodeType, UrlProtocol
 from .utils import partial
 from .validation import As, Const, Fn, Ignore, Maybe, Schema, Type
@@ -80,22 +80,26 @@ Url = Key(URL)
 
 # Main schemas
 
+ValidatorDetailsSchema = Schema(
+    {
+        "account_number": PublicKey,
+        "ip_address": Url,
+        "node_identifier": PublicKey,
+        "port": Maybe(int),
+        "protocol": Key(UrlProtocol),
+        "version": str,
+        "default_transaction_fee": int,
+        "root_account_file": Url,
+        "root_account_file_hash": Key(Fn(bytes.fromhex)),
+        "seed_block_identifier": str,
+        "daily_confirmation_rate": int,
+        "trust": Key(float),
+    }
+)
+
 BankConfigSchema = Schema(
     {
-        "primary_validator": {
-            "account_number": PublicKey,
-            "ip_address": Url,
-            "node_identifier": PublicKey,
-            "port": Maybe(int),
-            "protocol": Key(UrlProtocol),
-            "version": str,
-            "default_transaction_fee": int,
-            "root_account_file": Url,
-            "root_account_file_hash": PublicKey,
-            "seed_block_identifier": str,
-            "daily_confirmation_rate": Maybe(int),
-            "trust": Key(float),
-        },
+        "primary_validator": ValidatorDetailsSchema,
         "account_number": PublicKey,
         "ip_address": Url,
         "node_identifier": PublicKey,
@@ -168,6 +172,7 @@ ConfirmationServiceSchema = Schema(
         "validator": str,
     }
 )
+
 
 AccountSchema = Schema(
     {
