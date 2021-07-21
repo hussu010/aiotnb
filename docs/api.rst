@@ -28,14 +28,14 @@ Core
 Connect to a bank
 ~~~~~~~~~~~~~~~~~~
 
-See the TNB `Bank API <https://thenewboston.com/bank-api/>`_ documentation.
+See the TNB `Bank API <https://thenewboston.com/developer/api/bank-api>`_ documentation.
 
 .. autofunction:: connect_to_bank
 
 Connect to a Primary Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the TNB `Validator API <https://thenewboston.com/primary-validator-api/>`_ documentation.
+See the TNB `Validator API <https://thenewboston.com/developer/api/primary-validator-api>`_ documentation.
 
 .. autofunction:: connect_to_validator
 
@@ -43,7 +43,7 @@ See the TNB `Validator API <https://thenewboston.com/primary-validator-api/>`_ d
 Connect to a Confirmation Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the TNB `Confirmation Validator API <https://thenewboston.com/confirmation-validator-api/>`_ documentation.
+See the TNB `Confirmation Validator API <https://thenewboston.com/developer/api/confirmation-validator-api>`_ documentation.
 
 .. autofunction:: connect_to_cv
 
