@@ -22,7 +22,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, TypeVar
 
-from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
 from yarl import URL
 
@@ -95,7 +94,7 @@ class Account:
         self.trust = trust
         self.bank_id = bank_id
 
-        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self.account_number = bytes(account_number).hex()
         self._account_number = account_number
 
     def _update(self, *, created_date: datetime, modified_date: datetime, trust: float, **kwargs):
@@ -172,10 +171,10 @@ class BankDetails:
         trust: float,
         bank_id: VerifyKey,
     ):
-        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self.account_number = bytes(account_number).hex()
         self._account_number = account_number
 
-        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.node_identifier = bytes(node_identifier).hex()
         self._node_identifier = node_identifier
 
         self.version = version
@@ -249,7 +248,7 @@ class BankTransaction:
         self.fee_paid_to = None if fee == NodeType._none else fee
         self.memo = memo
 
-        self.recipient = recipient.encode(encoder=HexEncoder).decode("utf-8")
+        self.recipient = bytes(recipient).hex()
         self._recipient = recipient
 
         self.bank_id = bank_id
@@ -310,13 +309,13 @@ class Block:
         self.created = created_date
         self.modified = modified_date
 
-        self.signature = signature.decode("utf-8")
+        self.signature = signature.hex()
         self._signature = signature
 
-        self.balance_key = balance_key.encode(encoder=HexEncoder).decode("utf-8")
+        self.balance_key = bytes(balance_key).hex()
         self._balance_key = balance_key
 
-        self.sender = sender.encode(encoder=HexEncoder).decode("utf-8")
+        self.sender = bytes(sender).hex()
         self._sender = sender
 
     def __repr__(self):
@@ -374,7 +373,7 @@ class ConfirmationBlock:
         self.block = block
         self.validator = validator
 
-        self.block_identifier = block_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.block_identifier = bytes(block_identifier).hex()
         self._block_identifier = block_identifier
 
     def __repr__(self):
@@ -487,7 +486,7 @@ class InvalidBlock:
         self.confirmation_validator = confirmation_validator
         self.primary_validator = primary_validator
 
-        self.block_identifier = block_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.block_identifier = bytes(block_identifier).hex()
         self._block_identifier = block_identifier
 
     def __repr__(self):
@@ -579,10 +578,10 @@ class ValidatorDetails:
         seed_block_identifier: str,
         daily_confirmation_rate: int,
     ):
-        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self.account_number = bytes(account_number).hex()
         self._account_number = account_number
 
-        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.node_identifier = bytes(node_identifier).hex()
         self._node_identifier = node_identifier
 
         self.version = version
@@ -606,14 +605,6 @@ class ValidatorDetails:
         # TODO (Validator milestone) Make this use ValidatorConfig
 
         raise NotImplementedError()
-
-        url_base = URL.build(scheme=self.protocol.value, host=self.ip_address, port=self.port)
-
-        route = Route(HTTPMethod.get, "config").resolve(url_base)
-
-        data = await self._state.client.request(route)
-
-        return self._state.create_validator(ValidatorDetailsSchema.transform(data))
 
     def __repr__(self):
         return f"<ValidatorDetails(node_identifier={self.node_identifier})>"

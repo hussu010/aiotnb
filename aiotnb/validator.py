@@ -11,8 +11,6 @@ __all__ = ("Validator",)
 import logging
 from typing import TYPE_CHECKING
 
-from nacl.encoding import HexEncoder
-
 from .enums import NodeType
 from .errors import ValidatorFailed
 from .http import HTTPMethod, Route
@@ -43,7 +41,7 @@ class Validator:
         self._state = state
 
         # TODO
-        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.node_identifier = bytes(node_identifier).hex()
         self._node_identifier = node_identifier
 
     def _update(self, **kwargs):

@@ -8,12 +8,10 @@ from __future__ import annotations
 
 __all__ = ("Bank",)
 
-import asyncio
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from nacl.encoding import HexEncoder
 from yarl import URL
 
 from .common import (
@@ -64,7 +62,7 @@ if TYPE_CHECKING:
     from nacl.signing import VerifyKey
 
     from .enums import CleanCommand, CrawlCommand
-    from .keypair import AnyPubKey, Keypair
+    from .keypair import AnyKey, Keypair
     from .payment import TransactionBlock
     from .state import InternalState
     from .validator import Validator
@@ -137,7 +135,7 @@ class Bank:
         ), f"attempt to initiate a Bank object with non-bank node data: {node_type.value}"
 
         self._node_identifier = node_identifier
-        self.node_identifier = node_identifier.encode(encoder=HexEncoder).decode("utf-8")
+        self.node_identifier = bytes(node_identifier).hex()
 
         self._primary_validator = primary_validator
 
@@ -173,7 +171,7 @@ class Bank:
             ), f"attempt to update a Bank object with non-bank node data: {node_type.value}"
 
         self._account_number = account_number
-        self.account_number = account_number.encode(encoder=HexEncoder).decode("utf-8")
+        self.account_number = bytes(account_number).hex()
 
         self.version = version  # TODO: int-tuple for version
         self.transaction_fee = default_transaction_fee
@@ -256,7 +254,7 @@ class Bank:
 
         return paginator
 
-    async def set_account_trust(self, account_number: AnyPubKey, trust: float, node_keypair: Keypair) -> Account:
+    async def set_account_trust(self, account_number: AnyKey, trust: float, node_keypair: Keypair) -> Account:
         """
         Update the trust measure this bank has for a given account. You need this bank's signing key to do this.
 
@@ -444,7 +442,7 @@ class Bank:
 
         return paginator
 
-    async def set_bank_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> BankDetails:
+    async def set_bank_trust(self, node_identifier: AnyKey, trust: float, node_keypair: Keypair) -> BankDetails:
         """
         Update the trust measure this bank has for a given bank. You need this bank's signing key to do this.
 
@@ -688,7 +686,6 @@ class Bank:
         limit: Optional[int] = None,
         ordering: ConfirmationBlockOrder = ConfirmationBlockOrder.created,
         page_limit: int = 100,
-        **kwargs: Any,
     ) -> PaginatedResponse[ConfirmationBlock]:
         """
         Request a list of confirmation blocks a bank is aware of.
@@ -815,7 +812,6 @@ class Bank:
         limit: Optional[int] = None,
         ordering: InvalidBlockOrder = InvalidBlockOrder.created,
         page_limit: int = 100,
-        **kwargs: Any,
     ) -> PaginatedResponse[InvalidBlock]:
         """
         Request a list of invalid blocks a bank is aware of.
@@ -857,8 +853,6 @@ class Bank:
         paginator = PaginatedResponse(self._state, InvalidBlockSchema, InvalidBlock, url, limit=limit, params=payload)
 
         return paginator
-
-        # TODO: POST /invalid_blocks
 
     # TODO: (node host library) POST /invalid_blocks
 
@@ -1010,7 +1004,7 @@ class Bank:
 
         return paginator
 
-    async def notify_upgrade(self, node_identifier: AnyPubKey, node_keypair: Keypair) -> bool:
+    async def notify_upgrade(self, node_identifier: AnyKey, node_keypair: Keypair) -> bool:
         """
         Notify a bank of a validator promotion.
 
@@ -1120,7 +1114,7 @@ class Bank:
 
         return paginator
 
-    async def fetch_validator_by_nid(self, node_identifier: AnyPubKey) -> ValidatorDetails:
+    async def fetch_validator_by_nid(self, node_identifier: AnyKey) -> ValidatorDetails:
         """
         Request a connected validator by its node identifier.
 
@@ -1151,7 +1145,7 @@ class Bank:
 
         return self._state.create_validatordetails({**validator_data, "bank_id": self.node_identifier})
 
-    async def set_validator_trust(self, node_identifier: AnyPubKey, trust: float, node_keypair: Keypair) -> Bank:
+    async def set_validator_trust(self, node_identifier: AnyKey, trust: float, node_keypair: Keypair) -> Bank:
         """
         Update the trust measure this bank has for a given validator. You need this bank's signing key to do this.
 

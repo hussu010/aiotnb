@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from typing import List, Union
 
     from .bank import Bank
-    from .keypair import AnyPubKey, Keypair
+    from .keypair import AnyKey, Keypair
     from .validator import Validator
 
 _log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class _PaymentTransaction:
 
 
 class Payment(_PaymentTransaction):
-    def __init__(self, amount: int, recipient: AnyPubKey, *, memo: str = ""):
+    def __init__(self, amount: int, recipient: AnyKey, *, memo: str = ""):
         self.amount = amount
         self.recipient = key_as_str(recipient)
         self.memo = memo

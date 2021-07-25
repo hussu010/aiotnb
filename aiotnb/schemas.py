@@ -14,8 +14,8 @@ __all__ = (
     "Signature",
     "Url",
     "ValidatorDetailsSchema",
-    "BankConfig",
-    "BankDetails",
+    "BankConfigSchema",
+    "BankDetailsSchema",
     "BlockSchema",
     "BankTransactionSchema",
     "ConfirmationBlockSchema",
@@ -29,7 +29,6 @@ __all__ = (
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from nacl.encoding import HexEncoder
 from nacl.signing import VerifyKey
 from yarl import URL
 
@@ -53,14 +52,14 @@ def _parse_iso8601_utc(timestamp: str) -> datetime:
 
 
 def _key_from_str(key_str: str) -> VerifyKey:
-    return VerifyKey(key_str.encode("utf-8"), encoder=HexEncoder)
+    return VerifyKey(bytes.fromhex(key_str))
 
 
 def _to_bytes(data: str, *, exact_len: Optional[int]) -> bytes:
     if exact_len is not None and len(data) != exact_len:
         raise ValueError(f"value should be {exact_len} bytes")
 
-    return data.encode("utf-8")
+    return bytes.fromhex(data)
 
 
 # Schema models start here

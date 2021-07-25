@@ -7,7 +7,6 @@ Copyright (c) 2021 AnonymousDapper
 from typing import cast
 
 import pytest
-from nacl.encoding import HexEncoder
 from nacl.signing import SignedMessage
 
 from aiotnb.keypair import Keypair, is_valid_keypair
@@ -44,7 +43,7 @@ def test_sign_store():
 
     stored_message = keypair_1.sign_message(MESSAGE)
 
-    assert stored_message.message == HexEncoder.encode(MESSAGE)
+    assert stored_message.message == MESSAGE
 
 
 def test_sign_load():
@@ -55,19 +54,19 @@ def test_sign_load():
 
 @pytest.mark.order(after="test_sign_load")
 def test_sign_load_raw():
-    message = keypair_2.verify_raw(HexEncoder.encode(MESSAGE), stored_message.signature, keypair_1.account_number_bytes)
+    message = keypair_2.verify_raw(MESSAGE, stored_message.signature, keypair_1.account_number)
 
     assert message == MESSAGE
 
 
 def test_is_valid_keypair():
-    assert is_valid_keypair(keypair_1.account_number_bytes, keypair_1.signing_key_bytes)
+    assert is_valid_keypair(keypair_1.account_number, keypair_1.signing_key)
 
 
 @pytest.mark.xfail
 @pytest.mark.order(after="test_is_valid_keypair")
 def test_is_not_valid_keypair():
     assert is_valid_keypair(
-        b"8e8efdaa4cf11f8350720d29c8cef0c6fda728c822ba03fa5e2533416dd03ff5",
-        keypair_1.signing_key_bytes,
+        "8e8efdaa4cf11f8350720d29c8cef0c6fda728c822ba03fa5e2533416dd03ff5",
+        keypair_1.signing_key,
     )

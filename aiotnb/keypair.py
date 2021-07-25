@@ -6,13 +6,12 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-__all__ = ("Keypair", "is_valid_keypair", "key_as_str", "AnyPubKey")
+__all__ = ("Keypair", "is_valid_keypair", "key_as_str", "key_as_bytes", "AnyKey")
 
 import logging
 from pathlib import Path
 from typing import Union, cast
 
-from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
 from nacl.exceptions import ValueError as NACLValueError
 from nacl.signing import SignedMessage, SigningKey, VerifyKey
@@ -27,7 +26,7 @@ from .errors import (
 
 _log = logging.getLogger(__name__)
 
-AnyPubKey = Union[VerifyKey, bytes, str]
+AnyKey = Union[VerifyKey, SigningKey, bytes, str]
 
 
 class Keypair:
@@ -45,26 +44,17 @@ class Keypair:
         The network account number.
         The account number is the public key.
 
-    account_number_bytes: :class:`bytes`
-        The account number as hex-encoded bytes.
-
     signing_key:  :class:`str`
         The signing key for the account.
         The signing key is the **private** key.
 
         .. caution:: Do not share this key. This is the private key and can be used to impersonate you.
 
-    signing_key_bytes: :class:`bytes`
-        The account private key as hex-encoded bytes.
-
-
     """
 
     __slots__ = (
         "account_number",
-        "account_number_bytes",
         "signing_key",
-        "signing_key_bytes",
         "_sign_key",
         "_verify_key",
     )
@@ -82,11 +72,9 @@ class Keypair:
         self._sign_key = private_key
         self._verify_key = private_key.verify_key
 
-        self.signing_key_bytes = private_key.encode(encoder=HexEncoder)
-        self.signing_key = self.signing_key_bytes.decode("utf-8")
+        self.signing_key = bytes(private_key).hex()
 
-        self.account_number_bytes = self._verify_key.encode(encoder=HexEncoder)
-        self.account_number = self.account_number_bytes.decode("utf-8")
+        self.account_number = bytes(private_key.verify_key).hex()
 
     @classmethod
     def from_key_file(cls, key_file: Union[Path, str]) -> Keypair:
@@ -110,11 +98,11 @@ class Keypair:
             The keyfile was present but could not be read.
         """
         file_path = Path(key_file).resolve() if not isinstance(key_file, Path) else key_file.resolve()
-        raw_key: bytes
+        raw_key: str
 
         if file_path.exists() and file_path.is_file():
             try:
-                raw_key = file_path.read_bytes()
+                raw_key = file_path.read_text()
 
             except Exception as e:
                 _log.error("keyfile could not be read")
@@ -127,7 +115,7 @@ class Keypair:
         signing_key: SigningKey
 
         try:
-            signing_key = SigningKey(raw_key, encoder=HexEncoder)
+            signing_key = SigningKey(bytes.fromhex(raw_key))
 
         except Exception as e:
             _log.error("private key load failed")
@@ -168,11 +156,8 @@ class Keypair:
         :class:`LocalAccount`
             A new account object.
         """
-        if isinstance(key, str):
-            key = key.encode(encoding="utf-8")
-
         try:
-            return cls(SigningKey(key, encoder=HexEncoder))
+            return cls(SigningKey(key_as_bytes(key)))
         except Exception as e:
             _log.error("private key load failed")
             raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
@@ -200,7 +185,7 @@ class Keypair:
 
         if not file_path.exists():
             try:
-                file_path.write_bytes(self.signing_key_bytes)
+                file_path.write_text(self.signing_key)
 
             except Exception as e:
                 _log.error("keyfile write failed")
@@ -212,7 +197,7 @@ class Keypair:
 
     def sign_message(self, message: bytes) -> SignedMessage:
         """
-        Signs a given message and returns the signature as hex-encoded bytes.
+        Signs a given message and returns the signature.
 
         Parameters
         ----------
@@ -221,12 +206,12 @@ class Keypair:
 
         Returns
         -------
-        :class:`~nacl.signing.SignedMessage`
+        :class:`nacl.signing.SignedMessage`
             The signature data.
 
         """
 
-        return self._sign_key.sign(message, encoder=HexEncoder)
+        return self._sign_key.sign(message)
 
     @staticmethod
     def verify(signed_message: SignedMessage, verify_key: VerifyKey) -> bytes:
@@ -235,10 +220,10 @@ class Keypair:
 
         Parameters
         ----------
-        message: :class:`~nacl.signing.SignedMessage`
+        message: :class:`nacl.signing.SignedMessage`
             The signed message + signature data.
 
-        verify_key: :class:`~nacl.signing.VerifyKey`
+        verify_key: :class:`nacl.signing.VerifyKey`
             The sender's public key data.
 
         Raises
@@ -253,7 +238,7 @@ class Keypair:
             The verified message data
         """
         try:
-            verified_message = verify_key.verify(signed_message, encoder=HexEncoder)
+            verified_message = verify_key.verify(signed_message)
 
         except BadSignatureError as e:
             _log.error("verify: signature failed")
@@ -262,19 +247,19 @@ class Keypair:
         return verified_message
 
     @staticmethod
-    def verify_raw(message: bytes, signature: bytes, verify_key: bytes) -> bytes:
+    def verify_raw(message: Union[str, bytes], signature: Union[str, bytes], verify_key: AnyKey) -> bytes:
         """
         Takes a signed message, a signature, and a public key, and attempts to verify the signature on the message.
 
         Parameters
         ----------
-        message: :class:`bytes`
+        message: Union[:class:`str`, :class:`bytes`]
             The signed message data to validate.
 
-        signature: :class:`bytes`
+        signature: Union[:class:`str`, :class:`bytes`]
             The signature data attached to the message.
 
-        verify_key: :class:`bytes`
+        verify_key: :ref:`AnyKey <anykey>`
             The sender's public key data.
 
         Raises
@@ -292,8 +277,8 @@ class Keypair:
         """
 
         try:
-            vk = VerifyKey(verify_key, encoder=HexEncoder)
-            verified_message = vk.verify(message, HexEncoder.decode(signature), encoder=HexEncoder)
+            vk = VerifyKey(key_as_bytes(verify_key))
+            verified_message = vk.verify(key_as_bytes(message), key_as_bytes(signature))
 
         except NACLValueError as e:
             _log.error("verify_raw: public key failed")
@@ -302,6 +287,10 @@ class Keypair:
         except BadSignatureError as e:
             _log.error("verify_raw: signature failed")
             raise SignatureVerifyFailed("verify_raw signature bad", original=e) from e
+
+        except ValueError as e:
+            _log.error("verify_raw: bad message or signature data")
+            raise KeysignException("message or signature data is corrupt", original=e) from e
 
         except Exception as e:
             _log.error("verify_raw: other error")
@@ -322,16 +311,16 @@ class Keypair:
         return f"Account[{self.account_number}]"
 
 
-def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
+def is_valid_keypair(account_number: AnyKey, signing_key: AnyKey) -> bool:
     """
     Takes an account_number, a signing_key and returns whether they are of the same keypair.
 
     Parameters
     ----------
-    account_number: :class:`bytes`
+    account_number: :ref:`AnyKey <anykey>`
         The account number of the keypair to validate.
 
-    signing_key: :class:`bytes`
+    signing_key: :ref:`AnyKey <anykey>`
         The signing key of the keypair to validate.
 
     Raises
@@ -348,13 +337,13 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
         The bool representing whether the keypair is valid.
     """
     try:
-        sign_key = SigningKey(signing_key, encoder=HexEncoder)
+        sign_key = SigningKey(key_as_bytes(signing_key))
     except Exception as e:
         _log.error("signing key load failed")
         raise SigningKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
 
     try:
-        pub_key = VerifyKey(account_number, encoder=HexEncoder)
+        pub_key = VerifyKey(key_as_bytes(account_number))
     except Exception as e:
         _log.error("accountnumber load failed")
         raise VerifyKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
@@ -362,13 +351,13 @@ def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
     return sign_key.verify_key == pub_key
 
 
-def key_as_str(key: AnyPubKey) -> str:
+def key_as_str(key: AnyKey) -> str:
     """
     Takes a key in various types and converts it into a string.
 
     Parameters
     ----------
-    key: :ref:`AnyPubKey <anypubkey>`
+    key: :ref:`AnyKey <anykey>`
         The account number of the keypair to validate.
 
     Returns
@@ -377,12 +366,44 @@ def key_as_str(key: AnyPubKey) -> str:
         The string version of the key.
     """
     if type(key) == VerifyKey:
-        new_key = cast(VerifyKey, key).encode(encoder=HexEncoder).decode("utf-8")
+        new_key = bytes(cast(VerifyKey, key)).hex()
+
+    if type(key) == SigningKey:
+        new_key = bytes(cast(SigningKey, key)).hex()
 
     elif type(key) is bytes:
-        new_key = key.decode("utf-8")
+        new_key = key.hex()
 
     else:
         new_key = cast(str, key)
+
+    return new_key
+
+
+def key_as_bytes(key: AnyKey) -> bytes:
+    """
+    Takes a key in various types and converts it into bytes.
+
+    Parameters
+    ----------
+    key: :ref:`AnyKey <anykey>`
+        The account number of the keypair to validate.
+
+    Returns
+    -------
+    :class:`bytes`
+        The string version of the key.
+    """
+    if type(key) == VerifyKey:
+        new_key = bytes(cast(VerifyKey, key))
+
+    if type(key) == SigningKey:
+        new_key = bytes(cast(SigningKey, key))
+
+    elif type(key) is bytes:
+        new_key = key
+
+    else:
+        new_key = bytes.fromhex(cast(str, key))
 
     return new_key
