@@ -11,7 +11,7 @@ from yarl import URL
 
 import aiotnb
 from aiotnb import connect_to_bank
-from aiotnb.models import AccountListOrder
+from aiotnb.enums import AccountOrder
 
 BANK_ADDRESS = "54.183.16.194"
 
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 async def aiotnb_test():
     bank = await connect_to_bank(BANK_ADDRESS)
 
-    account_iter = await bank.fetch_accounts(ordering=AccountListOrder.trust_desc)
+    account_iter = await bank.fetch_accounts(ordering=AccountOrder.trust_desc, page_limit=10)
 
     result = await account_iter.flatten()
 
@@ -39,7 +39,7 @@ def tnb_test():
 
     node_list = []
     while not done:
-        result = bank.fetch_accounts(offset=offset)
+        result = bank.fetch_accounts(offset=offset, limit=10)
 
         if result["next"]:
             offset = URL(result["next"]).query["offset"]
