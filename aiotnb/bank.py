@@ -290,7 +290,7 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.patch, "accounts/{account_number}", account_number=key_as_str(account_number))
@@ -482,7 +482,7 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.patch, "banks/{node_identifier}", node_identifier=key_as_str(node_identifier))
@@ -645,7 +645,7 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.post, "clean")
@@ -794,7 +794,7 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.post, "crawl")
@@ -930,7 +930,7 @@ class Bank:
         payload = {
             "message": message,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.post, "connection_requests")
@@ -1004,6 +1004,61 @@ class Bank:
 
         return paginator
 
+    async def notify_confirmation_service(
+        self, start: datetime, end: datetime, node_keypair: Keypair
+    ) -> ConfirmationService:
+        """
+        Notify a bank of a scheduled confirmation service block.
+
+        This is only useful for CV nodes.
+
+        Parameters
+        ----------
+        start: :class:`~datetime.datetime`
+            Starting time of the confirmation service period.
+
+        end: :class:`~datetime.datetime`
+            Ending time of the confirmation service period.
+
+        node_keypair: :class:`.Keypair`
+            Keypair to sign the request.
+
+            .. note::
+                This should be the keypair for the CV node.
+
+        Raises
+        ------
+        ~aiotnb.Unauthorized
+            The server did not accept the message signature.
+
+        ~aiotnb.HTTPException
+            The request to notify the bank failed.
+
+        Returns
+        -------
+        :class:`.ConfirmationService`
+            The new confirmation service.
+        """
+        payload = {"start": start.isoformat(), "end": end.isoformat()}
+
+        payload_data = message_to_bytes(payload)
+        signed = node_keypair.sign_message(payload_data)
+
+        payload = {
+            "message": payload,
+            "node_identifier": node_keypair.account_number,
+            "signature": signed.signature.hex(),
+        }
+
+        route = Route(HTTPMethod.post, "validator_confirmation_services")
+
+        result = await self._request(route, json=payload)
+
+        new_data = ConfirmationServiceSchema.transform(result)
+        service = self._state.create_confirmationservice(new_data)
+
+        return service
+
     async def notify_upgrade(self, node_identifier: AnyKey, node_keypair: Keypair) -> bool:
         """
         Notify a bank of a validator promotion.
@@ -1037,7 +1092,7 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
         route = Route(HTTPMethod.patch, "upgrade_notice")
@@ -1145,7 +1200,9 @@ class Bank:
 
         return self._state.create_validatordetails({**validator_data, "bank_id": self.node_identifier})
 
-    async def set_validator_trust(self, node_identifier: AnyKey, trust: float, node_keypair: Keypair) -> Bank:
+    async def set_validator_trust(
+        self, node_identifier: AnyKey, trust: float, node_keypair: Keypair
+    ) -> ValidatorDetails:
         """
         Update the trust measure this bank has for a given validator. You need this bank's signing key to do this.
 
@@ -1181,14 +1238,14 @@ class Bank:
         payload = {
             "message": payload,
             "node_identifier": node_keypair.account_number,
-            "signature": signed.signature.decode("utf-8"),
+            "signature": signed.signature.hex(),
         }
 
-        route = Route(HTTPMethod.patch, "banks/{node_identifier}", node_identifier=key_as_str(node_identifier))
+        route = Route(HTTPMethod.patch, "validators/{node_identifier}", node_identifier=key_as_str(node_identifier))
 
         result = await self._request(route, json=payload)
 
         new_data = AccountSchema.transform(result)
-        bank = self._state.create_bank(new_data)
+        validator = self._state.create_validatordetails(new_data)
 
-        return bank
+        return validator
