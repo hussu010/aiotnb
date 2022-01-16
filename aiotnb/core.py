@@ -6,33 +6,25 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-__all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv", "LocalAccount", "is_valid_keypair")
+__all__ = ("connect_to_bank", "connect_to_validator", "connect_to_cv")
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from nacl.encoding import HexEncoder
-from nacl.exceptions import BadSignatureError
-from nacl.exceptions import ValueError as NACLValueError
-from nacl.signing import SignedMessage, SigningKey, VerifyKey
 from yarl import URL
 
-from .exceptions import (
-    KeyfileNotFound,
-    KeysignException,
-    SignatureVerifyFailed,
-    SigningKeyLoadFailed,
-    VerifyKeyLoadFailed,
-)
+from .bank import Bank
+from .confirmation_validator import ConfirmationValidator
 from .http import HTTPClient, HTTPMethod, Route
-from .models import Bank, ConfirmationValidator, Validator
+from .schemas import BankConfigSchema
+from .state import InternalState
+from .validation import transform
+from .validator import Validator
 
 if TYPE_CHECKING:
-    from typing import Any, Union
+    from typing import Any
 
-_log: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool = False, **kwargs: Any) -> Bank:
@@ -52,17 +44,17 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
     Raises
@@ -87,7 +79,6 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
         An object representing the bank at the specified address.
     """
 
-    # url_base = f"http{'s' if use_https else ''}://{bank_address}"
     url_base = URL.build(scheme="https" if use_https else "http", host=bank_address, port=port)
 
     connector = kwargs.get("connector")
@@ -97,13 +88,17 @@ async def connect_to_bank(bank_address: str, *, port: int = 80, use_https: bool 
 
     client = HTTPClient(connector, proxy=proxy, proxy_auth=proxy_auth, loop=loop)
 
+    state = InternalState(client)
+
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
-    return Bank()
+    new_data = transform(BankConfigSchema, data)
+
+    return state.create_bank(new_data)
 
 
 async def connect_to_cv(
@@ -125,17 +120,17 @@ async def connect_to_cv(
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
     Raises
@@ -172,7 +167,7 @@ async def connect_to_cv(
 
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
@@ -198,17 +193,17 @@ async def connect_to_validator(
     use_https: Optional[:class:`bool`]
         Whether to enable HTTPS. Defaults to ``False``.
 
-    loop: Optional[:class:`asyncio.AbstractEventLoop`]
+    loop: Optional[:class:`~asyncio.AbstractEventLoop`]
         The event loop to use for the underlying HTTP client.
         Defaults to ``None`` and the current event loop is used if omitted.
 
-    connector: Optional[:class:`aiohttp.BaseConnector`]
+    connector: Optional[:class:`~aiohttp.BaseConnector`]
         The connector to use for connection transport.
 
     proxy: Optional[:class:`str`]
         Proxy URL, if a proxy is required.
 
-    proxy_auth: Optional[:class:`aiohttp.BasicAuth`]
+    proxy_auth: Optional[:class:`~aiohttp.BasicAuth`]
         Object representing HTTP Basic Authentication for the proxy. Useless without ``proxy`` set.
 
 
@@ -247,286 +242,8 @@ async def connect_to_validator(
 
     await client.init_session()
 
-    route = Route(HTTPMethod.Get, "/config").resolve(url_base)
+    route = Route(HTTPMethod.get, "config").resolve(url_base)
 
     data = await client.request(route)
 
-    return Validator()
-
-
-class LocalAccount:
-    """
-    Represents a local keypair account.
-
-    .. admonition:: Supported Operations
-
-        .. describe:: x == y
-            Checks if the keypairs for both accounts are equal.
-
-    Attributes
-    ----------
-    account_number: :class:`bytes`
-        The network account number as hex-encoded bytes.
-        The account number is the public key.
-
-    signing_key:  :class:`bytes`
-        The signing key for the account as hex-encoded bytes.
-        The signing key is the **private** key.
-
-        .. caution:: Do not share this key. This is the private key and can be used to impersonate you.
-    """
-
-    def __init__(self, private_key: SigningKey):
-        """
-        Create a new local account object from an existing private key.
-
-        Parameters
-        ----------
-        sign_key: :class:`nacl.signing.SigningKey`
-            The private key for the keypair. The verify key will be derived from the private key.
-        """
-
-        self._sign_key = private_key
-        self._verify_key = private_key.verify_key
-
-        self.signing_key = private_key.encode(encoder=HexEncoder)
-        self.account_number = self._verify_key.encode(encoder=HexEncoder)
-
-    @classmethod
-    def from_key_file(cls, key_file: Union[Path, str]) -> LocalAccount:
-        """
-        Load an account from an existing private key file.
-
-        Parameters
-        ----------
-        key_file: Union[:class:`pathlib.Path`, :class:`str`]
-            The file path to load a keyfile from.
-
-        Raises
-        ------
-        :exc:`KeyfileNotFound`
-            The specified file was not found.
-
-        :exc:`SigningKeyLoadFailed`
-            The private key contained in the keyfile was not a proper key.
-
-        :exc:`KeysignException`
-            The keyfile was present but could not be read.
-        """
-        file_path = Path(key_file).resolve() if not isinstance(key_file, Path) else key_file.resolve()
-        raw_key: bytes
-
-        if file_path.exists() and file_path.is_file():
-            try:
-                raw_key = file_path.read_bytes()
-
-            except Exception as e:
-                _log.error("keyfile could not be read")
-                raise KeysignException("keyfile could not be read", original=e) from e
-
-        else:
-            _log.error("keyfile path was not found")
-            raise KeyfileNotFound(f"'{file_path.name}' was not found on the system")
-
-        signing_key: SigningKey
-
-        try:
-            signing_key = SigningKey(raw_key, encoder=HexEncoder)
-
-        except Exception as e:
-            _log.error("private key load failed")
-            raise SigningKeyLoadFailed("key must be 32 bytes long and hex-encoded", original=e) from e
-
-        return cls(signing_key)
-
-    @classmethod
-    def generate(cls) -> LocalAccount:
-        """
-        Generates a new keypair and load an account from it.
-        """
-
-        return cls(SigningKey.generate())
-
-    def write_key_file(self, key_file: Union[Path, str]):
-        """
-        Write out the account's private key for safekeeping.
-
-        Parameters
-        ----------
-        key_file_path: Union[:class:`pathlib.Path`, :class:`str`]
-            The file path to save the key to.
-
-        Raises
-        ------
-        :exc:`KeyfileNotFound`
-            The specified file path already exists.
-            This method will *not* overwrite existing files.
-
-        :exc:`KeysignException`
-            The keyfile could not be written to.
-        """
-
-        file_path = Path(key_file).resolve() if not isinstance(key_file, Path) else key_file.resolve()
-
-        if not file_path.exists():
-            try:
-                file_path.write_bytes(self.signing_key)
-
-            except Exception as e:
-                _log.error("keyfile write failed")
-                raise KeysignException("keyfile could not be written", original=e) from e
-
-        else:
-            _log.error("keyfile already exists, not overwriting.")
-            raise KeyfileNotFound(f"'{file_path.name}' already exists")
-
-    def sign_message(self, message: bytes) -> SignedMessage:
-        """
-        Signs a given message and returns the signature as hex-encoded bytes.
-
-        Parameters
-        ----------
-        message: :class:`bytes`
-            The message data to sign.
-
-        Returns
-        -------
-        :class:`nacl.signing.SignedMessage`
-            The signature data.
-
-        """
-
-        return self._sign_key.sign(message, encoder=HexEncoder)
-
-    @staticmethod
-    def verify(signed_message: SignedMessage, verify_key: VerifyKey) -> bytes:
-        """
-        Takes a signed message, a signature, and a public key, and attempts to verify the signature on the message.
-
-        Parameters
-        ----------
-        message: :class:`nacl.signing.SignedMessage`
-            The signed message + signature data.
-
-        verify_key: :class:`nacl.signing.VerifyKey`
-            The sender's public key data.
-
-        Raises
-        ------
-
-        :exc:`SignatureVerifyFailed`
-            The signature did not match the public key.
-
-        Returns
-        -------
-        :class:`bytes`
-            The verified message data
-        """
-        try:
-            verified_message = verify_key.verify(signed_message, encoder=HexEncoder)
-
-        except BadSignatureError as e:
-            _log.error("verify: signature failed")
-            raise SignatureVerifyFailed("verify signature bad", original=e) from e
-
-        return verified_message
-
-    @staticmethod
-    def verify_raw(message: bytes, signature: bytes, verify_key: bytes) -> bytes:
-        """
-        Takes a signed message, a signature, and a public key, and attempts to verify the signature on the message.
-
-        Parameters
-        ----------
-        message: :class:`bytes`
-            The signed message data to validate.
-
-        signature: :class:`bytes`
-            The signature data attached to the message.
-
-        verify_key: :class:`bytes`
-            The sender's public key data.
-
-        Raises
-        ------
-        :exc:`VerifyKeyLoadFailed`
-            The given public key data was not a valid key.
-
-        :exc:`SignatureVerifyFailed`
-            The signature did not match the public key.
-
-        Returns
-        -------
-        :class:`bytes`
-            The verified message data
-        """
-
-        try:
-            vk = VerifyKey(verify_key, encoder=HexEncoder)
-            verified_message = vk.verify(message, HexEncoder.decode(signature), encoder=HexEncoder)
-
-        except NACLValueError as e:
-            _log.error("verify_raw: public key failed")
-            raise VerifyKeyLoadFailed("verify_raw invalid key", original=e) from e
-
-        except BadSignatureError as e:
-            _log.error("verify_raw: signature failed")
-            raise SignatureVerifyFailed("verify_raw signature bad", original=e) from e
-
-        except Exception as e:
-            _log.error("verify_raw: other error")
-            raise KeysignException("other error, probably bad signature", original=e) from e
-
-        return verified_message
-
-    def __eq__(self, other: object):
-        if not isinstance(other, LocalAccount):
-            return NotImplemented
-
-        return self._sign_key == other._sign_key and self._verify_key == other._verify_key
-
-    def __repr__(self):
-        return f"<LocalAccount(account_number={self.account_number})>"
-
-    def __str__(self):
-        return f"Account[{self.account_number.decode(encoding='utf-8')}]"
-
-
-def is_valid_keypair(account_number: bytes, signing_key: bytes) -> bool:
-    """
-    Takes an account_number, a signing_key and returns whether they are of the same keypair.
-
-    Parameters
-    ----------
-    account_number: :class:`bytes`
-        The account number of the keypair to validate.
-
-    signing_key: :class:`bytes`
-        The signing key of the keypair to validate.
-
-    Raises
-    ------
-    :exc:`SigningKeyLoadFailed`
-        The signing key was not a valid key.
-
-    :exc:`VerifyKeyLoadFailed`
-        The account number was not a valid key.
-
-    Returns
-    -------
-    :class:`bool`
-        The bool representing whether the keypair is valid.
-    """
-    try:
-        sign_key = SigningKey(signing_key, encoder=HexEncoder)
-    except Exception as e:
-        _log.error("signing key load failed")
-        raise SigningKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
-
-    try:
-        pub_key = VerifyKey(account_number, encoder=HexEncoder)
-    except Exception as e:
-        _log.error("accountnumber load failed")
-        raise VerifyKeyLoadFailed("key must be 32 bytes long and valid", original=e) from e
-
-    return sign_key.verify_key == pub_key
+    return Validator()  # type: ignore

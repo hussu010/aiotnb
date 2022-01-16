@@ -28,14 +28,14 @@ Core
 Connect to a bank
 ~~~~~~~~~~~~~~~~~~
 
-See the TNB `Bank API <https://thenewboston.com/bank-api/>`_ documentation.
+See the TNB `Bank API <https://thenewboston.com/developer/api/bank-api>`_ documentation.
 
 .. autofunction:: connect_to_bank
 
 Connect to a Primary Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the TNB `Validator API <https://thenewboston.com/primary-validator-api/>`_ documentation.
+See the TNB `Validator API <https://thenewboston.com/developer/api/primary-validator-api>`_ documentation.
 
 .. autofunction:: connect_to_validator
 
@@ -43,37 +43,53 @@ See the TNB `Validator API <https://thenewboston.com/primary-validator-api/>`_ d
 Connect to a Confirmation Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the TNB `Confirmation Validator API <https://thenewboston.com/confirmation-validator-api/>`_ documentation.
+See the TNB `Confirmation Validator API <https://thenewboston.com/developer/api/confirmation-validator-api>`_ documentation.
 
 .. autofunction:: connect_to_cv
 
 
-Keypair Account Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Keypair  Management
+~~~~~~~~~~~~~~~~~~~~
 
-.. attributetable:: LocalAccount
+.. attributetable:: Keypair
 
-.. autoclass:: LocalAccount
+.. autoclass:: Keypair()
     :members:
 
 
 Verify a Keypair
-~~~~~~~~~~~~~~~~~
+*****************
 
-Check if a Keypair is valid
+Check if a keypair is valid
 
 .. autofunction:: is_valid_keypair
 
+Key From Bytes
+***************
 
-Models
--------
+Sometimes you may want to convert a key to a nice, readable string.
+
+Keys can be a few different types, and aiotnb includes a type alias to refer to all of them.
+
+.. _anykey:
+
+.. important::
+    ``AnyKey`` is an alias for Union[:class:`nacl.signing.VerifyKey`, :class:`nacl.signing.SigningKey`, :class:`bytes`, :class:`str`]
+
+.. autofunction:: key_as_str
+
+.. autofunction:: key_as_bytes
+
+
+API Models
+-----------
 
 Bank
 ~~~~~
 
 .. attributetable:: Bank
 
-.. autoclass:: Bank
+.. autoclass:: Bank()
     :members:
 
 Primary Validator
@@ -81,7 +97,7 @@ Primary Validator
 
 .. attributetable:: Validator
 
-.. autoclass:: Validator
+.. autoclass:: Validator()
     :members:
 
 Confirmation Validator
@@ -89,9 +105,229 @@ Confirmation Validator
 
 .. attributetable:: ConfirmationValidator
 
-.. autoclass:: ConfirmationValidator
+.. autoclass:: ConfirmationValidator()
     :members:
 
+
+Other Models
+-------------
+
+Account
+~~~~~~~~
+
+.. attributetable:: Account
+
+.. autoclass:: Account()
+    :members:
+
+Bank Transaction
+~~~~~~~~~~~~~~~~~
+
+.. attributetable:: BankTransaction
+
+.. autoclass:: BankTransaction()
+    :members:
+
+Partial Bank
+~~~~~~~~~~~~~
+This object is returned when only part of the information needed to make a connection is returned from the API.
+
+    .. attributetable:: BankDetails
+
+    .. autoclass:: BankDetails()
+        :members:
+
+Partial Validator
+~~~~~~~~~~~~~~~~~~
+This object is returned when only part of the information needed to make a connection is returned from the API.
+
+    .. attributetable:: ValidatorDetails
+
+    .. autoclass:: ValidatorDetails()
+        :members:
+
+Block
+~~~~~~
+
+.. attributetable:: Block
+
+.. autoclass:: Block()
+    :members:
+
+Confirmation Block
+~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationBlock
+
+.. autoclass:: ConfirmationBlock()
+    :members:
+
+Confirmation Service
+~~~~~~~~~~~~~~~~~~~~~
+
+.. attributetable:: ConfirmationService
+
+.. autoclass:: ConfirmationService()
+    :members:
+
+Invalid Block
+~~~~~~~~~~~~~~
+
+.. attributetable:: InvalidBlock
+
+.. autoclass:: InvalidBlock()
+    :members:
+
+Async Iterator
+--------------------
+
+Some API endpoints return data in a series of pages marked by offsets. To make using these easier, aiotnb includes an async iterator that automatically fetches new pages as needed.
+
+.. class:: AsyncIterator
+
+
+
+    .. admonition:: Supported Operations
+
+        .. describe:: async for x in y
+
+            Asynchronously iterate over the iterator's contents.
+
+    .. method:: next()
+        :async:
+
+        |coro|
+
+        Attempts to advanced the iterator by one element.
+        Raises :exc:`IteratorEmpty` when no more elements can be found.
+
+    .. method:: find(predicate)
+        :async:
+
+        |coro|
+
+        Returns the first item in the iterator that satisfies ``predicate``.
+
+        :param predicate: The predicate (check function) to use. Can be a coroutine.
+        :return: The first element that returns ``True`` for the predicate, or ``None`` if none do.
+
+    .. method:: flatten()
+        :async:
+
+        |coro|
+
+        Collects the iterator into a single :class:`list`.
+
+        :return: A list of every element.
+        :rtype: list
+
+    .. method:: map(func)
+
+        Does basically the same thing as the builtin map, but returns another async iterator with ``func`` applied to every element. The function can be a regular function or a coroutine.
+
+        :param func: Function to call on every element in the iterator
+        :rtype: AsyncIterator
+
+    .. method:: filter(predicate)
+
+        Also does basically the same thing as the builtin filter, and returns another async iterator yielding every element that satisfies ``predicate``. This function can also be a coroutine.
+
+        :param predicate: Check function to apply to every element.
+        :rtype: AsyncIterator
+
+
+
+
+Enumerations
+-------------
+
+Result Ordering
+~~~~~~~~~~~~~~~~
+
+Accounts
+*********
+
+.. autoclass:: AccountOrder()
+    :members:
+
+Transactions
+*************
+
+.. autoclass:: TransactionOrder()
+    :members:
+
+Banks
+******
+
+.. autoclass:: BankOrder()
+    :members:
+
+Validators
+***********
+
+.. autoclass:: ValidatorOrder()
+    :members:
+
+Blocks
+*******
+
+.. autoclass:: BlockOrder()
+    :members:
+
+Confirmation Blocks
+********************
+
+.. autoclass:: ConfirmationBlockOrder()
+    :members:
+
+Confirmation Services
+**********************
+
+.. autoclass:: ConfirmationServiceOrder()
+    :members:
+
+Invalid Blocks
+***************
+
+.. autoclass:: InvalidBlockOrder()
+    :members:
+
+URL Protocol
+~~~~~~~~~~~~~
+
+.. autoclass:: UrlProtocol()
+    :members:
+    
+Node Type
+~~~~~~~~~~
+
+.. autoclass:: NodeType()
+    :members:
+    
+Clean Command
+~~~~~~~~~~~~~~
+
+.. autoclass:: CleanCommand()
+    :members:
+    
+Clean Status
+~~~~~~~~~~~~~
+
+.. autoclass:: CleanStatus()
+    :members:
+
+Crawl Command
+~~~~~~~~~~~~~~
+
+.. autoclass:: CrawlCommand()
+    :members:
+
+Crawl Status
+~~~~~~~~~~~~~
+
+.. autoclass:: CrawlStatus()
+    :members:
+    
 
 
 
@@ -104,6 +340,8 @@ The following is a list of possible exceptions thrown by aiotnb.
 
 .. autoexception:: HTTPException
     :members:
+
+.. autoexception:: Unauthorized
 
 .. autoexception:: Forbidden
 
@@ -134,6 +372,7 @@ Exception Reference
     - :exc:`Exception`
         - :exc:`TNBException`
             - :exc:`HTTPException`
+                - :exc:`Unauthorized`
                 - :exc:`Forbidden`
                 - :exc:`NotFound`
                 - :exc:`NetworkServerError`

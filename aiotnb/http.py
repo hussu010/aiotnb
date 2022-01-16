@@ -6,6 +6,8 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
+__all__ = ("Route", "HTTPMethod", "HTTPClient")
+
 import asyncio
 import logging
 import sys
@@ -16,7 +18,7 @@ from urllib.parse import quote as _quote
 from aiohttp import ClientSession
 from yarl import URL
 
-from .exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
+from .errors import Forbidden, HTTPException, NetworkServerError, NotFound
 
 try:
     import ujson as json
@@ -37,9 +39,7 @@ if TYPE_CHECKING:
 
 from . import __version__
 
-__all__ = ("Route", "HTTPMethod", "HTTPClient")
-
-_log: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 if not _USING_FAST_JSON:
@@ -47,11 +47,11 @@ if not _USING_FAST_JSON:
 
 
 class HTTPMethod(Enum):
-    Get = "GET"
-    Post = "POST"
-    Put = "PUT"
-    Patch = "PATCH"
-    Delete = "DELETE"
+    get = "GET"
+    post = "POST"
+    put = "PUT"
+    patch = "PATCH"
+    delete = "DELETE"
 
 
 class Route:
@@ -91,6 +91,8 @@ class HTTPClient:
 
         self.user_agent = f"aiotnb (https://github.com/AnonymousDapper/aiotnb {__version__}) Python/{sys.version_info.major}.{sys.version_info.minor}"
 
+        self._req_count = 0
+
     @property
     def _session(self) -> Optional[ClientSession]:
         return self.__session
@@ -110,7 +112,7 @@ class HTTPClient:
 
     async def init_session(self):
         if not self.__session:
-            self.__session = ClientSession(connector=self.connector)
+            self.__session = ClientSession(connector=self.connector, json_serialize=json.dumps)
 
         else:
             _log.warn("init_session called with existing session")
@@ -120,6 +122,8 @@ class HTTPClient:
             await self.__session.close()
 
     async def request(self, route_data: Tuple[str, URL], **kwargs: Any) -> Mapping[str, Any]:
+        self._req_count += 1
+
         headers = {"User-Agent": self.user_agent}
         method, url = route_data
 

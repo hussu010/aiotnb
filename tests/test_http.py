@@ -7,24 +7,14 @@ Copyright (c) 2021 AnonymousDapper
 import pytest
 from yarl import URL
 
-from aiotnb.exceptions import Forbidden, HTTPException, NetworkServerError, NotFound
+from aiotnb.errors import Forbidden, HTTPException, NetworkServerError, NotFound
 from aiotnb.http import HTTPClient, HTTPMethod, Route
 
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture  # type: ignore
-async def client():
-    c = HTTPClient()
-    await c.init_session()
-
-    yield c
-
-    await c.close()
-
-
 def test_route():
-    r = Route(HTTPMethod.Post, "a/b/c")
+    r = Route(HTTPMethod.post, "a/b/c")
 
     assert r.resolve(URL("http://example.com")) == ("POST", URL("http://example.com/a/b/c"))
 
@@ -32,64 +22,64 @@ def test_route():
 def test_route_param():
     d = {"bank_id": "test-node", "useless": 0}
 
-    r = Route(HTTPMethod.Get, "banks/{bank_id}", **d)
+    r = Route(HTTPMethod.get, "banks/{bank_id}", **d)
 
     assert r.resolve(URL("http://test.bank.site")) == ("GET", URL("http://test.bank.site/banks/test-node"))
 
 
-async def test_get(client):
+async def test_get(client: HTTPClient):
     payload = {"test": "yes"}
-    route = Route(HTTPMethod.Get, "get")
+    route = Route(HTTPMethod.get, "get")
 
     result = await client.request(route.resolve(URL("https://httpbin.org")), params=payload)
 
     assert result["args"] == payload
 
 
-async def test_post(client):
+async def test_post(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
-    route = Route(HTTPMethod.Post, "post")
+    route = Route(HTTPMethod.post, "post")
 
     result = await client.request(route.resolve(URL("https://httpbin.org")), params=params, json=payload)
 
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_put(client):
+async def test_put(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
-    route = Route(HTTPMethod.Put, "put")
+    route = Route(HTTPMethod.put, "put")
 
     result = await client.request(route.resolve(URL("https://httpbin.org")), params=params, json=payload)
 
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_patch(client):
+async def test_patch(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
-    route = Route(HTTPMethod.Patch, "patch")
+    route = Route(HTTPMethod.patch, "patch")
 
     result = await client.request(route.resolve(URL("https://httpbin.org")), params=params, json=payload)
 
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_delete(client):
+async def test_delete(client: HTTPClient):
     payload = {"test": "yes"}
     params = {"test": "also yes"}
-    route = Route(HTTPMethod.Delete, "delete")
+    route = Route(HTTPMethod.delete, "delete")
 
     result = await client.request(route.resolve(URL("https://httpbin.org")), params=params, json=payload)
 
     assert result["json"] == payload and result["args"] == params
 
 
-async def test_403(client):
+async def test_403(client: HTTPClient):
     payload = {"code": 403}
 
-    route = Route(HTTPMethod.Get, "status/{code}", **payload)
+    route = Route(HTTPMethod.get, "status/{code}", **payload)
 
     try:
         await client.request(route.resolve(URL("https://httpbin.org")))
@@ -98,10 +88,10 @@ async def test_403(client):
         assert isinstance(e, Forbidden)
 
 
-async def test_404(client):
+async def test_404(client: HTTPClient):
     payload = {"code": 404}
 
-    route = Route(HTTPMethod.Get, "status/{code}", **payload)
+    route = Route(HTTPMethod.get, "status/{code}", **payload)
 
     try:
         await client.request(route.resolve(URL("https://httpbin.org")))
@@ -110,10 +100,10 @@ async def test_404(client):
         assert isinstance(e, NotFound)
 
 
-async def test_503(client):
+async def test_503(client: HTTPClient):
     payload = {"code": 503}
 
-    route = Route(HTTPMethod.Get, "status/{code}", **payload)
+    route = Route(HTTPMethod.get, "status/{code}", **payload)
 
     try:
         await client.request(route.resolve(URL("https://httpbin.org")))
@@ -122,10 +112,10 @@ async def test_503(client):
         assert isinstance(e, NetworkServerError)
 
 
-async def test_502(client):
+async def test_502(client: HTTPClient):
     payload = {"code": 502}
 
-    route = Route(HTTPMethod.Get, "status/{code}", **payload)
+    route = Route(HTTPMethod.get, "status/{code}", **payload)
 
     try:
         await client.request(route.resolve(URL("https://httpbin.org")))

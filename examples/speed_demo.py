@@ -3,67 +3,70 @@
 # type: ignore
 
 import asyncio
+import logging
 import time
 
-from tnb import banks, validators
+from tnb import banks
 from yarl import URL
 
 import aiotnb
-from aiotnb import HTTPClient, HTTPMethod, Route
+from aiotnb import connect_to_bank
+from aiotnb.enums import AccountOrder, TransactionOrder
 
-BANK_ADDRESS = "54.177.121.3"
+BANK_ADDRESS = "54.183.16.194"
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 async def aiotnb_test():
-    client = HTTPClient()
-    await client.init_session()
+    bank = await connect_to_bank(BANK_ADDRESS)
 
-    route = Route(HTTPMethod.Get, "validators").resolve(URL(f"http://{BANK_ADDRESS}"))
-    results = await client.request(route)
+    result_iter = await bank.fetch_transactions(ordering=TransactionOrder.block_created_desc, page_limit=10)
 
-    node_list = []
-    for validator in results["results"]:
-        route = Route(HTTPMethod.Get, "/config").resolve(f"http://{validator['ip_address']}")
+    result = await result_iter.flatten()
 
-        node_result = await client.request(route)
-        node_list.append(node_result["node_type"])
+    await bank.close_session()
 
-    await client.close()
-
-    return node_list
+    return result
 
 
 def tnb_test():
     bank = banks.Bank(address=BANK_ADDRESS)
 
-    result = bank.fetch_validators(limit=100)
+    offset = 0
+    done = False
 
     node_list = []
-    for validator in result["results"]:
-        validator_obj = validators.Validator(address=validator["ip_address"], port=validator["port"])
+    while not done:
+        result = bank.fetch_bank_transactions(offset=offset, limit=10)
 
-        node_result = validator_obj.fetch_validator_config()
-        node_list.append(node_result["node_type"])
+        if result["next"]:
+            offset = URL(result["next"]).query["offset"]
+        else:
+            done = True
+
+        node_list += result["results"]
 
     return node_list
 
 
 if __name__ == "__main__":
     # test old client
-    start_1 = time.monotonic()
+    start_1 = time.perf_counter()
     result_1 = tnb_test()
-    end_1 = time.monotonic()
+    end_1 = time.perf_counter()
 
     # test new client
-    start_2 = time.monotonic()
+    start_2 = time.perf_counter()
     result_2 = asyncio.run(aiotnb_test())
-    end_2 = time.monotonic()
+    end_2 = time.perf_counter()
 
     diff_1 = end_1 - start_1
     diff_2 = end_2 - start_2
 
-    print(f"[tnb]    Gathered {len(result_1)} validator nodes in {(diff_1 * 1000):.4f}ms")
-    print(f"[aiotnb] Gathered {len(result_2)} validator nodes in {(diff_2 * 1000):.4f}ms")
+    print(f"[tnb]    Gathered {len(result_1)} transactions (10-per-page) in {(diff_1 * 1000):.4f}ms")
+    print(f"[aiotnb] Gathered {len(result_2)} transactions (10-per-page) in {(diff_2 * 1000):.4f}ms")
 
     if diff_1 > diff_2:
         print(f"[aiotnb] Faster by {((diff_1 / diff_2) - 1) * 100:.0f}%")

@@ -6,15 +6,17 @@ Copyright (c) 2021 AnonymousDapper
 
 from __future__ import annotations
 
-from schema import SchemaError
-
 __all__ = (
     "TNBException",
+    "IteratorEmpty",
     "HTTPException",
+    "Unauthorized",
     "Forbidden",
     "NotFound",
     "NetworkServerError",
     "ValidatorException",
+    "ValidatorTransformError",
+    "ValidatorFailed",
     "KeysignException",
     "KeyfileNotFound",
     "SignatureVerifyFailed",
@@ -26,7 +28,7 @@ __all__ = (
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping, Optional
+    from typing import Optional
 
     from aiohttp.client_reqrep import ClientResponse
 
@@ -39,6 +41,15 @@ class TNBException(Exception):
     pass
 
 
+# Utility Errors
+
+
+class IteratorEmpty(TNBException):
+    """
+    Indicates an iterator is exhausted. Only used because StopIteration does BadThings.
+    """
+
+
 # HTTP errors
 
 
@@ -48,7 +59,7 @@ class HTTPException(TNBException):
 
     Attributes
     ----------
-    response: :class:`aiohttp.ClientResponse`
+    response: :class:`~aiohttp.ClientResponse`
         The response from the failed request.
 
     text: :class:`str`
@@ -65,9 +76,17 @@ class HTTPException(TNBException):
         super().__init__(f"{response.status} {response.reason}: {message}")
 
 
+class Unauthorized(HTTPException):
+    """
+    Represents an HTTP 401 response.
+    """
+
+    pass
+
+
 class Forbidden(HTTPException):
     """
-    Exception representing an HTTP 403 response.
+    Represents an HTTP 403 response.
 
     :class:`HTTPException` subclass.
     """
@@ -77,7 +96,7 @@ class Forbidden(HTTPException):
 
 class NotFound(HTTPException):
     """
-    Exception representing an HTTP 404 response.
+    Represents an HTTP 404 response.
 
     :class:`HTTPException` subclass.
     """
@@ -87,7 +106,7 @@ class NotFound(HTTPException):
 
 class NetworkServerError(HTTPException):
     """
-    Exception representing an HTTP 503 response.
+    Represents an HTTP 503 response.
 
     :class:`HTTPException` subclass.
     """
@@ -104,20 +123,24 @@ class ValidatorException(TNBException):
 
     Attributes
     ----------
-    data: Mapping[:class:`str`, Any]
-        The response data that failed validation.
-
-    original: :class:`SchemaError`
-        The exception that was the direct cause of this one.
-
     message: :class:`str`
         Explanation of what went wrong while validating.`
     """
 
-    def __init__(self, data: Mapping[str, Any], original: SchemaError):
-        self.data = data
-        self.original = original
-        self.message = original.code
+    def __init__(self, message: str):
+        self.message = message
+
+
+class ValidatorTransformError(ValidatorException):
+    """
+    Indicates a value could not be transformed while validating.
+    """
+
+
+class ValidatorFailed(ValidatorException):
+    """
+    Indicates a data validation did not succeed.
+    """
 
 
 # LocalAccount errors
@@ -142,7 +165,7 @@ class KeysignException(TNBException):
 
 class KeyfileNotFound(KeysignException):
     """
-    Exception indicating a specified private key file was not present.
+    Indicates a specified private key file was not present.
     """
 
     pass
@@ -150,7 +173,7 @@ class KeyfileNotFound(KeysignException):
 
 class SigningKeyLoadFailed(KeysignException):
     """
-    Exception indicating a specified private key was not valid.
+    Indicates a specified private key was not valid.
     """
 
     pass
@@ -158,7 +181,7 @@ class SigningKeyLoadFailed(KeysignException):
 
 class VerifyKeyLoadFailed(KeysignException):
     """
-    Exception indicating a specified public key was not valid.
+    Indicates a specified public key was not valid.
     """
 
     pass
@@ -166,7 +189,7 @@ class VerifyKeyLoadFailed(KeysignException):
 
 class SignatureVerifyFailed(KeysignException):
     """
-    Exception indicating a signature verification failed.
+    Indicates a signature verification failed.
     """
 
     pass
